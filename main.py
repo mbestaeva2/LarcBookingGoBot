@@ -4,6 +4,7 @@ import telebot
 from telebot import types
 import qrcode
 import os
+from datetime import datetime
 
 TOKEN = '7606923892:AAHvULF2JRwijXQfY80BCp1fceCFNBzvCO0'
 ADMIN_ID = 561665893
@@ -157,5 +158,14 @@ def fallback_message(message):
         bot.send_message(chat_id, "Пожалуйста! Обращайтесь 😉")
     else:
         bot.send_message(chat_id, "Если вы хотите забронировать поездку — напишите /start.")
-
+def get_greeting():
+    now = datetime.now().hour
+    if 5 <= now < 12:
+        return "Доброе утро! ☀️"
+    elif 12 <= now < 17:
+        return "Добрый день! 🌤️"
+    elif 17 <= now < 22:
+        return "Добрый вечер! 🌇"
+    else:
+        return "Доброй ночи! 🌙"
 bot.polling(none_stop=True)
