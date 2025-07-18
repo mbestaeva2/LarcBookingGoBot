@@ -1,16 +1,29 @@
-from keep_alive import keep_alive
-keep_alive()
+
 import telebot
 from telebot import types
 import qrcode
 import os
 from datetime import datetime
 
+from keep_alive import keep_alive
+keep_alive()
+
 TOKEN = '7606923892:AAHvULF2JRwijXQfY80BCp1fceCFNBzvCO0'
 ADMIN_ID = 561665893
 
 bot = telebot.TeleBot(TOKEN)
 user_data = {}
+
+def get_greeting():
+    now = datetime.now().hour
+    if 5 <= now < 12:
+        return "Доброе утро! 🌞"
+    elif 12 <= now < 17:
+        return "Добрый день! ☀️"
+    elif 17 <= now < 22:
+        return "Добрый вечер! 🌛"
+    else:
+        return "Доброй ночи! 🌙"
 
 # Создание QR-кода, если файла ещё нет
 qr_path = "driver_chat_qr.png"
@@ -152,20 +165,15 @@ def handle_final_confirmation(call):
 def fallback_message(message):
     text = message.text.lower()
     chat_id = message.chat.id
+
     if text in ["привет", "здравствуйте", "хай"]:
-        bot.send_message(chat_id, "Привет-привет! 😊 Напишите /start чтобы начать бронирование.")
+        bot.send_message(chat_id, f"{get_greeting()} Напишите, если хотите забронировать. 🚐")
     elif text in ["спасибо", "благодарю"]:
-        bot.send_message(chat_id, "Пожалуйста! Обращайтесь 😉")
+        bot.send_message(chat_id, "Пожалуйста! Обращайтесь 🙂")
     else:
-        bot.send_message(chat_id, "Если вы хотите забронировать поездку — напишите /start.")
-def get_greeting():
-    now = datetime.now().hour
-    if 5 <= now < 12:
-        return "Доброе утро! ☀️"
-    elif 12 <= now < 17:
-        return "Добрый день! 🌤️"
-    elif 17 <= now < 22:
-        return "Добрый вечер! 🌇"
-    else:
-        return "Доброй ночи! 🌙"
-bot.polling(none_stop=True)
+        bot.send_message(chat_id, "Если вы хотите забронировать поездку, нажмите /start.")
+
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
+
+1
