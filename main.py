@@ -8,7 +8,7 @@ from datetime import datetime
 from keep_alive import keep_alive
 keep_alive()
 
-TOKEN = '7606923892:AAEuhFgSDJfE1vwCj0YT3QEkbrExc0fLkg4'
+TOKEN = '7606923892:AAFkESJZvJxL-a00Af8Wet7mZRWq9XUAv9c'
 ADMIN_ID = 561665893
 
 bot = telebot.TeleBot(TOKEN)
