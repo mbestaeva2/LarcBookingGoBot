@@ -1,112 +1,121 @@
+import telebot
+from telebot import types
+from datetime import datetime
 
-from telebot import TeleBot, types
+TOKEN = '7606923892:A...GqGA'  # заменяй на свой токен
+ADMIN_ID = 561665893
 
-bot = TeleBot("7606923892:AAHXgO5n0xnNE6HpEeNmwWAbJCLnnQtGoGA")
+bot = telebot.TeleBot(TOKEN)
+user_data = {}
+
+def get_greeting():
+    hour = datetime.now().hour
+    if hour < 12:
+        return "Доброе утро! 🌞"
+    elif hour < 17:
+        return "Добрый день! 🌤"
+    elif hour < 22:
+        return "Добрый вечер! 🌇"
+    else:
+        return "Доброй ночи! 🌙"
 
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
-        types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking")
+        types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
+        types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
+        types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
     )
-    bot.send_message(message.chat.id, "Привет! Что вы хотите сделать?", reply_markup=markup)
-
-user_data = {}
+    bot.send_message(message.chat.id, f"{get_greeting()} Добро пожаловать!", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
-
     if call.data == "start_booking":
         user_data[chat_id] = {}
         bot.send_message(chat_id, "Введите ваше имя:")
         bot.register_next_step_handler(call.message, get_name)
+    elif call.data.startswith("route_"):
+        route = call.data.split("_", 1)[1]
+        user_data[chat_id]["route"] = route
+        send_location_options(chat_id)
+    elif call.data.startswith("loc_"):
+        finish_booking(call)
+    elif call.data.startswith("pass_"):
+        user_data[chat_id]["passengers"] = call.data.split("_", 1)[1]
+        send_route_options(chat_id)
 
 def get_name(message):
     chat_id = message.chat.id
     user_data[chat_id]["name"] = message.text
+    bot.send_message(chat_id, "Введите дату поездки (например, 21.07):")
+    bot.register_next_step_handler(message, get_date)
 
+def get_date(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["date"] = message.text
+    bot.send_message(chat_id, "Введите номер телефона:")
+    bot.register_next_step_handler(message, get_phone)
+
+def get_phone(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["phone"] = message.text
+    send_passenger_count(chat_id)
+
+def send_passenger_count(chat_id):
     markup = types.InlineKeyboardMarkup()
-    markup.add(
-        types.InlineKeyboardButton("Владикавказ — Тбилиси", callback_data="route1"),
-        types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route2")
-    )
-    bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("route"))
-def get_route(call):
-    chat_id = call.message.chat.id
-    user_data[chat_id]["route"] = "Владикавказ — Тбилиси" if call.data == "route1" else "Тбилиси — Владикавказ"
-
-    markup = types.InlineKeyboardMarkup()
-    times = ["09:00", "10:00", "11:00", "15:00", "19:00"]
-    for time in times:
-        markup.add(types.InlineKeyboardButton(time, callback_data=f"time_{time}"))
-    bot.send_message(chat_id, "Выберите время выезда:", reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("time_"))
-def get_time(call):
-    chat_id = call.message.chat.id
-    time = call.data.split("_")[1]
-    user_data[chat_id]["time"] = time
-
-    markup = types.InlineKeyboardMarkup(row_width=4)
-    markup.add(
-        types.InlineKeyboardButton("1", callback_data="pax_1"),
-        types.InlineKeyboardButton("2", callback_data="pax_2"),
-        types.InlineKeyboardButton("3", callback_data="pax_3"),
-        types.InlineKeyboardButton("4+", callback_data="pax_4")
-    )
+    for i in range(1, 6):
+        markup.add(types.InlineKeyboardButton(f"{i} человек", callback_data=f"pass_{i}"))
     bot.send_message(chat_id, "Сколько пассажиров?", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("pax_"))
-def get_passengers(call):
-    chat_id = call.message.chat.id
-    user_data[chat_id]["passengers"] = call.data.split("_")[1]
-
-    markup = types.InlineKeyboardMarkup()
-    locations = [
-        ("✈️ Аэропорт", "loc_airport"),
-        ("🚉 Ж/д вокзал", "loc_station"),
-        ("🏠 С адреса во Владикавказе", "loc_address"),
-        ("❓ Другое", "loc_other"),
-        ("🚇 Станция метро Дидубе", "loc_didube")
+def send_route_options(chat_id):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    routes = [
+        "Владикавказ — Тбилиси",
+        "Владикавказ — Степанцминда",
+        "Владикавказ — Кутаиси",
+        "Владикавказ — Батуми",
+        "Тбилиси — Владикавказ"
     ]
-    for label, callback in locations:
-        markup.add(types.InlineKeyboardButton(label, callback_data=callback))
-    bot.send_message(chat_id, "Выберите точку отправления:", reply_markup=markup)
+    for route in routes:
+        markup.add(types.InlineKeyboardButton(route, callback_data=f"route_{route}"))
+    bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("loc_"))
+def send_location_options(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+        types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
+        types.InlineKeyboardButton("Другое", callback_data="loc_other")
+    )
+    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
+
 def finish_booking(call):
     chat_id = call.message.chat.id
-    location = call.data.split("_")[1]
+    location = call.data.split("_", 1)[1]
     loc_names = {
         "airport": "Аэропорт",
         "station": "Ж/д вокзал",
         "address": "С адреса во Владикавказе",
-        "other": "Другое",
-        "didube": "Станция метро Дидубе"
+        "didube": "Станция метро Дидубе",
+        "other": "Другое"
     }
     user_data[chat_id]["location"] = loc_names.get(location, "Неизвестно")
-
     data = user_data[chat_id]
-    text = (
-        f"🚐 Новая заявка!
-"
-        f"👤 Имя: {data['name']}
-"
-        f"🗺️ Маршрут: {data['route']}
-"
-        f"🕘 Время: {data['time']}
-"
-        f"👥 Пассажиров: {data['passengers']}
-"
-        f"📍 Отправление: {data['location']}"
-    )
+    message_text = f"""🚨 Новая заявка!
 
-    bot.send_message("@TransverTbilisi", text)
-    bot.send_message(chat_id, "Ваша заявка отправлена админам.
-[Чат с админами](https://t.me/TransverTbilisi)", parse_mode="Markdown")
+Имя: {data['name']}
+Дата: {data['date']}
+Маршрут: {data['route']}
+Телефон: {data['phone']}
+    Пассажиры: {data['passengers']}
+Локация: {data['location']}
+"""
+    bot.send_message("@TransverTbilisi", message_text)
+    bot.send_message(chat_id, "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)", parse_mode="Markdown")
 
 if __name__ == '__main__':
     bot.polling(none_stop=True)
