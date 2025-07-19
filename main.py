@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from datetime import datetime
 
-TOKEN = '7606923892:A...GqGA'  # заменяй на свой токен
+TOKEN = '7606923892:AAHXgO5n0xnNE6HpEeNmwWAbJCLnnQtGoGA'  # заменяй на свой токен
 ADMIN_ID = 561665893
 
 bot = telebot.TeleBot(TOKEN)
