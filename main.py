@@ -19,17 +19,24 @@ def get_greeting():
         return "Добрый вечер! 🌇"
     else:
         return "Доброй ночи! 🌙"
-
+        
+def show_back_to_menu_button(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🔙 Вернуться в меню", callback_data="back_to_menu"))
+    bot.send_message(chat_id, "Что дальше?", reply_markup=markup)
+    
 @bot.message_handler(commands=['start'])
-def start(message):
+
+def show_main_menu(message_or_call):
+    chat_id = message_or_call.chat.id if hasattr(message_or_call, 'chat') else message_or_call.message.chat.id
+
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
         types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
         types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
         types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
     )
-    bot.send_message(message.chat.id, f"{get_greeting()} Добро пожаловать!", reply_markup=markup)
-
+    bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
@@ -117,7 +124,17 @@ def finish_booking(call):
 """
     bot.send_message(561665893, message_text)
     bot.send_message(chat_id, "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)", parse_mode="Markdown")
+    
+    
+def show_back_to_menu_button(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🔙 Вернуться в меню", callback_data="back_to_menu"))
+    bot.send_message(chat_id, "Что дальше?", reply_markup=markup)
+    
+@bot.callback_query_handler(func=lambda call: call.data == "back_to_menu")
 
+def handle_back_to_menu(call):
+    show_main_menu(call)
 if __name__ == "__main__":
     bot.polling(non_stop=True)
     
