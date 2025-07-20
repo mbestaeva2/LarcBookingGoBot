@@ -5,7 +5,7 @@ from datetime import datetime
 
 TOKEN = os.getenv("TOKEN")  # берём токен из переменной окружения
 ADMIN_ID = 561665893
-
+print("TOKEN = ", TOKEN)
 bot = telebot.TeleBot(TOKEN)
 user_data = {}
 
