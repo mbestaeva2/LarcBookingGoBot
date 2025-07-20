@@ -118,6 +118,6 @@ def finish_booking(call):
     bot.send_message("@TransverTbilisi", message_text)
     bot.send_message(chat_id, "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)", parse_mode="Markdown")
 
-if __name__== "__main__":
+if name == "__main__":
     bot.polling(non_stop=True)
     
