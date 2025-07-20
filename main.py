@@ -1,8 +1,9 @@
+import os
 import telebot
 from telebot import types
 from datetime import datetime
 
-TOKEN = '7606923892:AAHstiZTCiD2d8yHSk7whOWkiZz9Y_l9Kss'  # заменяй на свой токен
+TOKEN = os.getenv("TOKEN")  # берём токен из переменной окружения
 ADMIN_ID = 561665893
 
 bot = telebot.TeleBot(TOKEN)
