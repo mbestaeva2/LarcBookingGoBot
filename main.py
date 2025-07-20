@@ -115,7 +115,7 @@ def finish_booking(call):
     Пассажиры: {data['passengers']}
 Локация: {data['location']}
 """
-    bot.send_message("@TransverTbilisi", message_text)
+    bot.send_message(561665893, message_text)
     bot.send_message(chat_id, "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)", parse_mode="Markdown")
 
 if __name__ == "__main__":
