@@ -41,7 +41,7 @@ def show_main_menu(message_or_call):
     bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
-   @bot.callback_query_handler(func=lambda call: call.data == "back_to_menu")
+@bot.callback_query_handler(func=lambda call: call.data == "back_to_menu")
 def handle_back_to_menu(call):
     show_main_menu(call)
     
