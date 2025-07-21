@@ -136,9 +136,16 @@ def show_back_to_menu_button(chat_id):
     bot.send_message(chat_id, "Что дальше?", reply_markup=markup)
     
 @bot.callback_query_handler(func=lambda call: call.data == "back_to_menu")
-
 def handle_back_to_menu(call):
-    show_main_menu(call)
+    chat_id = call.message.chat.id
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
+        types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
+        types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
+    )
+    bot.send_message(chat_id, f"{get_greeting()} Добро пожаловать обратно в меню!", reply_markup=markup)
+
 if __name__ == "__main__":
     bot.polling(non_stop=True)
     
