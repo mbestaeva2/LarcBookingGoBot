@@ -1,11 +1,9 @@
-import os
 import telebot
 from telebot import types
 from datetime import datetime
 
-TOKEN = "7606923892:AAFTaq2UnGukug2VJJGZsN1NRrbgFeaICvQ"  
+TOKEN = "7606923892:AAFTaq2UnGukug2VJJGZsN1NRrbgFeaICvQ"
 ADMIN_ID = 561665893
-print("TOKEN = ", TOKEN)
 bot = telebot.TeleBot(TOKEN)
 user_data = {}
 
@@ -19,7 +17,7 @@ def get_greeting():
         return "Добрый вечер! 🌇"
     else:
         return "Доброй ночи! 🌙"
-        
+
 def show_back_to_menu_button(chat_id):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🔙 Вернуться в меню", callback_data="back_to_menu"))
@@ -28,10 +26,9 @@ def show_back_to_menu_button(chat_id):
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     show_main_menu(message)
-    
+
 def show_main_menu(message_or_call):
     chat_id = message_or_call.chat.id if hasattr(message_or_call, 'chat') else message_or_call.message.chat.id
-
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
         types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
@@ -39,12 +36,14 @@ def show_main_menu(message_or_call):
         types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
     )
     bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
-@bot.callback_query_handler(func=lambda call: True)
-def callback_handler(call):
+
 @bot.callback_query_handler(func=lambda call: call.data == "back_to_menu")
 def handle_back_to_menu(call):
     show_main_menu(call)
-    
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+    chat_id = call.message.chat.id
     if call.data == "start_booking":
         user_data[chat_id] = {}
         bot.send_message(chat_id, "Введите ваше имя:")
@@ -124,23 +123,16 @@ def finish_booking(call):
 Дата: {data['date']}
 Маршрут: {data['route']}
 Телефон: {data['phone']}
-    Пассажиры: {data['passengers']}
+Пассажиры: {data['passengers']}
 Локация: {data['location']}
 """
-    bot.send_message(561665893, message_text)
+    bot.send_message(ADMIN_ID, message_text)
     bot.send_message(
-        chat_id, 
-        "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)", 
+        chat_id,
+        "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)",
         parse_mode="Markdown"
     )
     show_back_to_menu_button(chat_id)
-    
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     bot.polling(none_stop=True)
- 
-    
-
- 
-    
