@@ -28,7 +28,7 @@ def show_back_to_menu_button(chat_id):
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     show_main_menu(message)
-    chat_id = getattr(message_or_call, 'chat', getattr(message_or_call.message, 'chat', None)).id
+    
 def show_main_menu(message_or_call):
     chat_id = message_or_call.chat.id if hasattr(message_or_call, 'chat') else message_or_call.message.chat.id
 
