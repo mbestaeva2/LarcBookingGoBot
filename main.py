@@ -123,8 +123,12 @@ def finish_booking(call):
 Локация: {data['location']}
 """
     bot.send_message(561665893, message_text)
-    bot.send_message(chat_id, "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)", parse_mode="Markdown")
-    
+    bot.send_message(
+        chat_id, 
+        "Ваша заявка отправлена администраторам. [Чат с админами](https://t.me/TransverTbilisi)", 
+        parse_mode="Markdown"
+    )
+    show_back_to_menu_button(chat_id)
     
 def show_back_to_menu_button(chat_id):
     markup = types.InlineKeyboardMarkup()
