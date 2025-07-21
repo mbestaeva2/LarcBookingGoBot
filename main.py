@@ -26,7 +26,9 @@ def show_back_to_menu_button(chat_id):
     bot.send_message(chat_id, "Что дальше?", reply_markup=markup)
     
 @bot.message_handler(commands=['start'])
-
+def handle_start(message):
+    show_main_menu(message)
+    chat_id = getattr(message_or_call, 'chat', getattr(message_or_call.message, 'chat', None)).id
 def show_main_menu(message_or_call):
     chat_id = message_or_call.chat.id if hasattr(message_or_call, 'chat') else message_or_call.message.chat.id
 
@@ -147,6 +149,6 @@ def handle_back_to_menu(call):
     bot.send_message(chat_id, f"{get_greeting()} Добро пожаловать обратно в меню!", reply_markup=markup)
 
 if __name__ == "__main__":
-    bot.polling(non_stop=True)
-    #redeploy
+    bot.polling(none_stop=True)
+ 
     
