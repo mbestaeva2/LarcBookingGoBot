@@ -20,7 +20,13 @@ def get_greeting():
     else:
         return "Доброй ночи! 🌙"
         
-def show_back_to_menu_button handle_start(message):
+def show_back_to_menu_button(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🔙 Вернуться в меню", callback_data="back_to_menu"))
+    bot.send_message(chat_id, "Что дальше?", reply_markup=markup)
+
+@bot.message_handler(commands=['start'])
+def handle_start(message):
     show_main_menu(message)
     
 def show_main_menu(message_or_call):
