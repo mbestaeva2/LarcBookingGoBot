@@ -6,6 +6,42 @@ ADMIN_ID = 561665893
 bot = telebot.TeleBot(TOKEN)
 user_data = {}
 
+def calculate_price(adults, children, animals):
+    price_adult = 3000
+    price_child = 2000
+    price_pet = 500
+
+    usd_rate = 92.0
+    gel_rate = 30.0
+    eur_rate = 100.0
+
+    total_rub = adults * price_adult + children * price_child + animals * price_pet
+    total_passengers = adults + children + animals
+
+    if total_passengers >= 7:
+        discount_percent = 15
+    elif total_passengers >= 5:
+        discount_percent = 10
+    elif total_passengers >= 3:
+        discount_percent = 5
+    else:
+        discount_percent = 0
+
+    discount_amount = total_rub * (discount_percent / 100)
+    final_total_rub = total_rub - discount_amount
+
+    total_usd = round(final_total_rub / usd_rate, 2)
+    total_gel = round(final_total_rub / gel_rate, 2)
+    total_eur = round(final_total_rub / eur_rate, 2)
+
+    return {
+        "passengers": total_passengers,
+        "discount_percent": discount_percent,
+        "final_rub": round(final_total_rub, 2),
+        "final_usd": total_usd,
+        "final_gel": total_gel,
+        "final_eur": total_eur
+    }
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -41,7 +77,9 @@ def callback_handler(call):
             "didube": "Станция метро Дидубе",
             "other": "Другое"
         }
+        
         user_data[chat_id]["location"] = locs.get(call.data.split("_", 1)[1], "Неизвестно")
+        finish_booking(chat_id)
         show_summary(chat_id)
 
     elif call.data == "confirm_yes":
@@ -121,6 +159,36 @@ def show_summary(chat_id):
         types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
         types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no"),
     )
+def finish_booking(chat_id):
+    data = user_data.get(chat_id, {})
+    
+    try:
+        # Парсим количества из строк в числа
+        adults = int(data.get("passengers", "0"))
+        children = int(data.get("children", "0"))
+        animals = int(data.get("animals", "0"))
+
+        result = calculate_price(adults, children, animals)
+
+        price_message = f"""
+💰 Итоговая стоимость поездки:
+
+👨‍👩‍👧‍👦 Пассажиров: {adults} взрослых, {children} детей
+🐶 Животных: {animals}
+
+🎁 Скидка: {result['discount_percent']}%
+💵 Сумма без скидки: {result['initial_rub']} ₽
+✅ Сумма со скидкой: {result['final_rub']} ₽
+
+💲 В долларах: {result['final_usd']} $
+💶 В евро: {result['final_eur']} €
+🇬🇪 В лари: {result['final_gel']} ₾
+"""
+        bot.send_message(chat_id, price_message)
+
+    except Exception as e:
+        bot.send_message(chat_id, f"Произошла ошибка при расчёте цены: {e}")
+        
     bot.send_message(chat_id, summary, reply_markup=markup)
 
 print("Bot started")
