@@ -155,6 +155,43 @@ def get_phone(message):
     )
     bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
 
+def get_passengers(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["passengers"] = message.text
+    msg = bot.send_message(chat_id, "Сколько детей? 👶:")
+    bot.register_next_step_handler(msg, get_children)
+
+def get_children(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["children"] = message.text
+    msg = bot.send_message(chat_id, "Сколько животных? 🐶:")
+    bot.register_next_step_handler(msg, get_animals)    
+def get_animals(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["animals"] = message.text
+    # Теперь, когда всё собрано — показываем маршрут
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("Владикавказ — Тбилиси", callback_data="route_Владикавказ — Тбилиси"),
+        types.InlineKeyboardButton("Владикавказ — Степанцминда", callback_data="route_Владикавказ — Степанцминда"),
+        types.InlineKeyboardButton("Владикавказ — Кутаиси", callback_data="route_Владикавказ — Кутаиси"),
+        types.InlineKeyboardButton("Владикавказ — Батуми", callback_data="route_Владикавказ — Батуми"),
+        types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route_Тбилиси — Владикавказ")
+    )
+    bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
+def get_phone(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["phone"] = message.text
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+        types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
+        types.InlineKeyboardButton("Другое", callback_data="loc_other"),
+    )
+    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
+
 def finish_booking(chat_id):
     data = user_data.get(chat_id, {})
 
@@ -212,6 +249,10 @@ def finish_booking(chat_id):
         
     bot.send_message(chat_id, summary, reply_markup=markup)
 
+print("Bot started")
+
+if name == 'main':
+    bot.polling(none_stop=True)
 print("Bot started")
 
 if __name__ == '__main__':
