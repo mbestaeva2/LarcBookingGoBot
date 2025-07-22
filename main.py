@@ -155,15 +155,16 @@ def get_phone(message):
     )
     bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
 
-def show_summary(chat_id):
+def finish_booking(chat_id):
     data = user_data.get(chat_id, {})
+
     summary = f"""🔎 Проверьте данные заявки:
 
 👤 Имя: {data.get('name')}
 📅 Дата: {data.get('date')}
 📍 Маршрут: {data.get('route')}
 📞 Телефон: {data.get('phone')}
-🧍‍ Пассажиры: {data.get('passengers')}
+🧍 Пассажиры: {data.get('passengers')}
 👶 Дети: {data.get('children')}
 🐾 Животные: {data.get('animals')}
 🚗 Локация: {data.get('location')}
