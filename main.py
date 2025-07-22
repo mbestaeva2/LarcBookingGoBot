@@ -192,36 +192,47 @@ def get_phone(message):
     )
     bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
 
-def finish_booking(chat_id):
-    data = user_data.get(chat_id, {})
+def get_passengers(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["passengers"] = message.text
+    msg = bot.send_message(chat_id, "Сколько детей? 👶:")
+    bot.register_next_step_handler(msg, get_children)
 
-    summary = f"""🔎 Проверьте данные заявки:
-
-👤 Имя: {data.get('name')}
-📅 Дата: {data.get('date')}
-📍 Маршрут: {data.get('route')}
-📞 Телефон: {data.get('phone')}
-🧍 Пассажиры: {data.get('passengers')}
-👶 Дети: {data.get('children')}
-🐾 Животные: {data.get('animals')}
-🚗 Локация: {data.get('location')}
-
-Отправить заявку?
-"""
-
+def get_children(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["children"] = message.text
+    msg = bot.send_message(chat_id, "Сколько животных? 🐶:")
+    bot.register_next_step_handler(msg, get_animals)    
+def get_animals(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["animals"] = message.text
+    # Теперь, когда всё собрано — показываем маршрут
     markup = types.InlineKeyboardMarkup()
     markup.add(
-        types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
-        types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")
+        types.InlineKeyboardButton("Владикавказ — Тбилиси", callback_data="route_Владикавказ — Тбилиси"),
+        types.InlineKeyboardButton("Владикавказ — Степанцминда", callback_data="route_Владикавказ — Степанцминда"),
+        types.InlineKeyboardButton("Владикавказ — Кутаиси", callback_data="route_Владикавказ — Кутаиси"),
+        types.InlineKeyboardButton("Владикавказ — Батуми", callback_data="route_Владикавказ — Батуми"),
+        types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route_Тбилиси — Владикавказ")
     )
-
-    bot.send_message(chat_id, summary, reply_markup=markup)
+    bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
+def get_phone(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["phone"] = message.text
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+        types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
+        types.InlineKeyboardButton("Другое", callback_data="loc_other"),
+    )
+    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
 
 def finish_booking(chat_id):
     data = user_data.get(chat_id, {})
-    
+
     try:
-        # Парсим количества из строк в числа
         adults = int(data.get("passengers", "0"))
         children = int(data.get("children", "0"))
         animals = int(data.get("animals", "0"))
@@ -244,16 +255,31 @@ def finish_booking(chat_id):
 """
         bot.send_message(chat_id, price_message)
 
+        summary = f"""🔎 Проверьте данные заявки:
+
+👤 Имя: {data.get('name')}
+📅 Дата: {data.get('date')}
+📍 Маршрут: {data.get('route')}
+📞 Телефон: {data.get('phone')}
+🧍 Пассажиры: {data.get('passengers')}
+👶 Дети: {data.get('children')}
+🐾 Животные: {data.get('animals')}
+🚗 Локация: {data.get('location')}
+
+Отправить заявку?
+"""
+
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
+            types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")
+        )
+
+        bot.send_message(chat_id, summary, reply_markup=markup)
+
     except Exception as e:
-        bot.send_message(chat_id, f"Произошла ошибка при расчёте цены: {e}")
-        
-    bot.send_message(chat_id, summary, reply_markup=markup)
+        bot.send_message(chat_id, f"Ошибка при расчёте: {e}")
 
-print("Bot started")
-
-if name == 'main':
-    bot.polling(none_stop=True)
-print("Bot started")
 
 if __name__ == '__main__':
     bot.polling(none_stop=True)
