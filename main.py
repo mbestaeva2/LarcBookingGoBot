@@ -1,3 +1,4 @@
+
 import telebot
 from telebot import types
 
@@ -171,6 +172,7 @@ def show_summary(chat_id):
         types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
         types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no"),
     )
+    bot.send_massege(chat_id, summary, reply_markup)
 def finish_booking(chat_id):
     data = user_data.get(chat_id, {})
     
