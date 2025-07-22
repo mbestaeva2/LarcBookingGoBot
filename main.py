@@ -57,7 +57,27 @@ def show_main_menu(chat_id):
         types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
     )
     bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
+    
+@bot.message_handler(content_types=['contact'])
+def handle_contact(message):
+    chat_id = message.chat.id
+    if message.contact is not None:
+        user_data[chat_id]["phone"] = message.contact.phone_number
 
+        # Убираем клавиатуру
+        hide_markup = types.ReplyKeyboardRemove()
+        bot.send_message(chat_id, "Спасибо! Номер получен. Теперь выберите место выезда:", reply_markup=hide_markup)
+
+        # Переходим к следующему шагу — выбор локации
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+            types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+            types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+            types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
+            types.InlineKeyboardButton("Другое", callback_data="loc_other")
+        )
+        bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
@@ -68,8 +88,7 @@ def callback_handler(call):
 
     elif call.data.startswith("route_"):
         user_data[chat_id]["route"] = call.data.split("_", 1)[1]
-        msg = bot.send_message(chat_id, "Введите номер телефона:")
-        bot.register_next_step_handler(msg, get_phone)
+       ask_phone(chat_id)
 
     elif call.data.startswith("loc_"):
         locs = {
@@ -216,19 +235,13 @@ def get_animals(message):
         types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route_Тбилиси — Владикавказ")
     )
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
-def get_phone(message):
-    chat_id = message.chat.id
-    user_data[chat_id]["phone"] = message.text
-    markup = types.InlineKeyboardMarkup()
-    markup.add(
-        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
-        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
-        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
-        types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
-        types.InlineKeyboardButton("Другое", callback_data="loc_other"),
-    )
-    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
-
+    
+def ask_phone(chat_id):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    button = types.KeyboardButton("📱 Отправить номер", request_contact=True)
+    markup.add(button)
+    bot.send_message(chat_id, "Пожалуйста, нажмите кнопку, чтобы отправить свой номер телефона:", reply_markup=markup)
+    
 def finish_booking(chat_id):
     data = user_data.get(chat_id, {})
 
@@ -282,4 +295,4 @@ def finish_booking(chat_id):
 
 
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    bot.polling(none_stop=True, timeout=60)
