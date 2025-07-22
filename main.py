@@ -157,7 +157,7 @@ def get_phone(message):
 
 def show_summary(chat_id):
     data = user_data[chat_id]
-summary = f"""🔎 Проверьте данные заявки:
+    summary = f"""🔎 Проверьте данные заявки:
 
 👤 Имя: {data.get('name')}
 📅 Дата: {data.get('date')}
@@ -170,11 +170,11 @@ summary = f"""🔎 Проверьте данные заявки:
 
 Отправить заявку?
 """
-  markup = types.InlineKeyboardMarkup()
-  markup.add(
-      types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
-      types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no"),
-    )
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
+        types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no"),
+        )
     bot.send_messege(chat_id, summary, reply_markup=murkup)
 def finish_booking(chat_id):
     data = user_data.get(chat_id, {})
