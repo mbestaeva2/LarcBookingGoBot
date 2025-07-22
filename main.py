@@ -120,16 +120,27 @@ def get_date(message):
 def get_passengers(message):
     chat_id = message.chat.id
     user_data[chat_id]["passengers"] = message.text
+    msg = bot.send_message(chat_id, "Сколько детей? 👶:")
+    bot.register_next_step_handler(msg, get_children)
+
+def get_children(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["children"] = message.text
+    msg = bot.send_message(chat_id, "Сколько животных? 🐶:")
+    bot.register_next_step_handler(msg, get_animals)    
+def get_animals(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["animals"] = message.text
+    # Теперь, когда всё собрано — показываем маршрут
     markup = types.InlineKeyboardMarkup()
     markup.add(
         types.InlineKeyboardButton("Владикавказ — Тбилиси", callback_data="route_Владикавказ — Тбилиси"),
         types.InlineKeyboardButton("Владикавказ — Степанцминда", callback_data="route_Владикавказ — Степанцминда"),
         types.InlineKeyboardButton("Владикавказ — Кутаиси", callback_data="route_Владикавказ — Кутаиси"),
         types.InlineKeyboardButton("Владикавказ — Батуми", callback_data="route_Владикавказ — Батуми"),
-        types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route_Тбилиси — Владикавказ"),
+        types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route_Тбилиси — Владикавказ")
     )
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
-
 def get_phone(message):
     chat_id = message.chat.id
     user_data[chat_id]["phone"] = message.text
