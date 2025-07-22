@@ -37,6 +37,7 @@ def calculate_price(adults, children, animals):
     return {
         "passengers": total_passengers,
         "discount_percent": discount_percent,
+         "initial_rub": total_rub,
         "final_rub": round(final_total_rub, 2),
         "final_usd": total_usd,
         "final_gel": total_gel,
