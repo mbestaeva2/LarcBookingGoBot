@@ -2,9 +2,10 @@
 import telebot
 from telebot import types
 
-TOKEN = "7606923892:AAFAbPNSxHacVXizqvjtJvDa4PicAo07cq4"
-ADMIN_ID = 561665893
+import os
+TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
+ADMIN_ID = 561665893
 user_data = {}
 
 def calculate_price(adults, children, animals):
