@@ -1,9 +1,11 @@
 
+import os
 import telebot
 from telebot import types
 
-import os
+# Получаем токен из переменной окружения
 TOKEN = os.getenv("BOT_TOKEN")
+print("Получен токен:", TOKEN)  # для отладки, потом можно удалить
 bot = telebot.TeleBot(TOKEN)
 ADMIN_ID = 561665893
 user_data = {}
