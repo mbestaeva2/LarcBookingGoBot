@@ -51,14 +51,14 @@ total_usd = round(final_total_rub / usd_rate, 2)
 total_gel = round(final_total_rub / gel_rate, 2)
 total_eur = round(final_total_rub / eur_rate, 2)
 
-return {
-    "passengers": total_passengers,
-    "discount_percent": discount_percent,
-     "initial_rub": total_rub,
-    "final_rub": round(final_total_rub, 2),
-    "final_usd": total_usd,
-    "final_gel": total_gel,
-    "final_eur": total_eur
+    return {
+        "passengers": total_passengers,
+        "discount_percent": discount_percent,
+         "initial_rub": total_rub,
+        "final_rub": round(final_total_rub, 2),
+        "final_usd": total_usd,
+        "final_gel": total_gel,
+        "final_eur": total_eur
 }
 
 @bot.message_handler(commands=['start'])
