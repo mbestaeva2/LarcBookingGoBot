@@ -190,30 +190,36 @@ def get_adults_for_price(message):
         msg = bot.send_message(chat_id, "Пожалуйста, введите число (например: 2)")
         bot.register_next_step_handler(msg, get_adults_for_price)
 
-def get_children(message):
+def get_children_for_price(message):
     chat_id = message.chat.id
     try:
         user_data[chat_id]["children"] = int(message.text)
         msg = bot.send_message(chat_id, "Сколько животных?")
-        bot.register_next_step_handler(msg, get_animals)
+        bot.register_next_step_handler(msg, get_animals_for_price)
     except ValueError:
-        msg = bot.send_message(chat_id, "Пожалуйста, введите число (например: 2)")
-        bot.register_next_step_handler(msg, get_children)
+        msg = bot.send_message(chat_id, "❗️ Пожалуйста, введите число (например: 1)")
+        bot.register_next_step_handler(msg, get_children_for_price)
 
-  
-def get_animals(message):
+
+def get_animals_for_price(message):
     chat_id = message.chat.id
-    user_data[chat_id]["animals"] = message.text
+    try:
+        user_data[chat_id]["animals"] = int(message.text)
 
-    markup = types.InlineKeyboardMarkup()
-    markup.add(
-        types.InlineKeyboardButton("Владикавказ — Тбилиси", callback_data="route_Владикавказ — Тбилиси"),
-        types.InlineKeyboardButton("Владикавказ — Степанцминда", callback_data="route_Владикавказ — Степанцминда"),
-        types.InlineKeyboardButton("Владикавказ — Кутаиси", callback_data="route_Владикавказ — Кутаиси"),
-        types.InlineKeyboardButton("Владикавказ — Батуми", callback_data="route_Владикавказ — Батуми"),
-        types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route_Тбилиси — Владикавказ")
-    )
-    bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
+        # Далее предложим выбрать маршрут
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton("Владикавказ → Тбилиси", callback_data="calc_route_Владикавказ — Тбилиси"),
+            types.InlineKeyboardButton("Тбилиси → Владикавказ", callback_data="calc_route_Тбилиси — Владикавказ"),
+            types.InlineKeyboardButton("Владикавказ → Батуми", callback_data="calc_route_Владикавказ — Батуми"),
+            types.InlineKeyboardButton("Владикавказ → Кутаиси", callback_data="calc_route_Владикавказ — Кутаиси"),
+            types.InlineKeyboardButton("Владикавказ → Степанцминда", callback_data="calc_route_Владикавказ — Степанцминда")
+        )
+        bot.send_message(chat_id, "Выберите маршрут для расчёта стоимости:", reply_markup=markup)
+
+    except ValueError:
+        msg = bot.send_message(chat_id, "❗ Пожалуйста, введите число (например: 0)")
+        bot.register_next_step_handler(msg, get_animals_for_price)
 
 # ---------- ЗАПРОС ТЕЛЕФОНА ---------- #
 def ask_phone(chat_id):
