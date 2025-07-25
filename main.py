@@ -13,9 +13,9 @@ user_data = {}
 
 def calculate_price(adults, children, animals, route):
     # Тарифы по умолчанию
-        price_adult = 3000
-        price_child = 2000
-        price_pet = 500
+    price_adult = 3000
+    price_child = 2000
+    price_pet = 500
     
     # Меняем цены в зависимости от маршрута
     if "Батуми" in route:
