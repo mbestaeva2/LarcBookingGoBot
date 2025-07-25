@@ -266,9 +266,9 @@ def finish_booking(chat_id):
         children = int(data.get("children", "0"))
         animals = int(data.get("animals", "0"))
 
-    result = calculate_price(adults, children, animals)
+        result = calculate_price(adults, children, animals)
 
-    price_message = f"""
+        price_message = f"""
 💰 Итоговая стоимость поездки:
 
 👨‍👩‍👧‍👦 Пассажиров: {adults} взрослых, {children} детей
@@ -282,9 +282,9 @@ def finish_booking(chat_id):
 💶 В евро: {result['final_eur']} €
 🇬🇪 В лари: {result['final_gel']} ₾
 """
-    bot.send_message(chat_id, price_message)
+        bot.send_message(chat_id, price_message)
 
-    summary = f"""🔎 Проверьте данные заявки:
+        summary = f"""🔎 Проверьте данные заявки:
 
 👤 Имя: {data.get('name')}
 📅 Дата: {data.get('date')}
