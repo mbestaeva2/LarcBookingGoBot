@@ -80,7 +80,7 @@ def show_main_menu(message):
 def callback_handler(call):
     chat_id = call.message.chat.id
 
-    if call.data == "start_booking":
+  if call.data == "start_booking":
         user_data[chat_id] = {}
         msg = bot.send_message(chat_id, "Введите имя:")
         bot.register_next_step_handler(msg, get_name)
