@@ -63,17 +63,6 @@ def calculate_price(adults, children, animals, route):
     }
 
 # ---------- СТАРТ ---------- #
-@bot.message_handler(commands=['start'])
-def show_main_menu(message):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(
-        types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
-        types.InlineKeyboardButton("💰 Рассчитать стоимость", callback_data="calc_price"),
-        types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
-        types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
-    )
-    bot.send_message(message.chat.id, "Привет! 👋 Выберите действие:", reply_markup=markup)
-
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
@@ -106,24 +95,7 @@ def callback_handler(call):
 
         result = calculate_price(adults, children, animals, route)
 
-        text = f"""💰 Примерная стоимость:
-
-📍 {route}
-👤 Взр: {adults} | 🧒 Дет: {children} | 🐶 Жив: {animals}
-🎟 Всего: {result['passengers']}
-🔻 Скидка: {result['discount_percent']}%
-💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
-"""
-        bot.send_message(chat_id, text)
-   elif call.data.startswith("calc_route_"):
-        route = call.data.split("_", 1)[1]
-        user_data[chat_id]["route"] = route
-
-        adults = int(user_data[chat_id].get("adults", 0))
-        children = int(user_data[chat_id].get("children", 0))
-        animals = int(user_data[chat_id].get("animals", 0))
-
-        result = calculate_price(adults, children, animals, route)
+        user_data[chat_id]["price"] = result  # сохраним расчёт, если пригодится
 
         text = f"""💰 Примерная стоимость:
 
@@ -133,8 +105,25 @@ def callback_handler(call):
 🔻 Скидка: {result['discount_percent']}%
 💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
 """
+
         bot.send_message(chat_id, text)
-        ask_phone(chat_id)
+
+        # Кнопки подтвердить / отменить
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton("✅ Да, хочу оформить", callback_data="confirm_booking"),
+            types.InlineKeyboardButton("❌ Нет, спасибо", callback_data="cancel_booking")
+        )
+        bot.send_message(chat_id, "Хотите оформить заявку на поездку?", reply_markup=markup)
+        
+    elif call.data == "confirm_booking":
+        msg = bot.send_message(chat_id, "Отлично! Введите имя:")
+        user_data[chat_id] = user_data.get(chat_id, {})  # на всякий случай
+        bot.register_next_step_handler(msg, get_name)
+
+    elif call.data == "cancel_booking":
+        bot.send_message(chat_id, "Хорошо 😊 Если передумаете — нажмите /start")
+
 
     elif call.data.startswith("loc_"):
         locs = {
@@ -158,9 +147,8 @@ def callback_handler(call):
 📞 Телефон: {data['phone']}
 🚗 Локация: {data['location']}
 """
-        bot.send_message(561665893, message_text)  # Замени ID на свой
+        bot.send_message(561665893, message_text)
         bot.send_message(chat_id, "✅ Спасибо! Заявка отправлена. Мы с вами скоро свяжемся.")
-
 # ---------- ШАГИ АНКЕТЫ ---------- #
 def get_name(message):
     chat_id = message.chat.id
