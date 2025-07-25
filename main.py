@@ -13,15 +13,8 @@ gel_rate = 30
 
 # ---------- ФУНКЦИЯ РАСЧЁТА ---------- #
 def calculate_price(adults, children, animals, route):
-    adults = int(adults)
-    children = int(children)
-    animals = int(animals)
-
-    if "Тбилиси" in route:
-        price_adult = 3000
-        price_child = 2000
-        price_pet = 500
-    elif "Батуми" in route:
+    # Базовые цены по маршруту
+    if "Батуми" in route:
         price_adult = 6000
         price_child = 4000
         price_pet = 1000
@@ -34,13 +27,16 @@ def calculate_price(adults, children, animals, route):
         price_child = 1500
         price_pet = 500
     else:
+        # Для маршрутов Владикавказ—Тбилиси и Тбилиси—Владикавказ
         price_adult = 3000
         price_child = 2000
         price_pet = 500
 
+    # Подсчёт стоимости
     total = adults * price_adult + children * price_child + animals * price_pet
     total_passengers = adults + children + animals
 
+    # Скидки
     if total_passengers >= 7:
         discount = 15
     elif total_passengers >= 5:
@@ -50,15 +46,20 @@ def calculate_price(adults, children, animals, route):
     else:
         discount = 0
 
-    final_rub = total - (total * discount / 100)
+    final_rub = int(total * (1 - discount / 100))
+
+    # Конвертация валют (можешь заменить на API)
+    usd_rate = 90
+    eur_rate = 100
+    gel_rate = 32
 
     return {
-        "passengers": total_passengers,
-        "discount_percent": discount,
-        "final_rub": round(final_rub, 2),
+        "final_rub": final_rub,
         "final_usd": round(final_rub / usd_rate, 2),
         "final_eur": round(final_rub / eur_rate, 2),
         "final_gel": round(final_rub / gel_rate, 2),
+        "discount_percent": discount,
+        "passengers": total_passengers
     }
 
 # ---------- СТАРТ ---------- #
@@ -124,17 +125,18 @@ def callback_handler(call):
         children = int(user_data[chat_id].get("children", 0))
         animals = int(user_data[chat_id].get("animals", 0))
 
-        result = calculate_price(adults, children, animals, route)
+       result = calculate_price(adults, children, animals, route)
 
-        text = f"""💰 Стоимость:
+text = f"""💰 Стоимость:
 
-📍 {route}
-👤 Взр: {adults} | 🧒 Дет: {children} | 🐶 Жив: {animals}
-🎟 Всего: {result['passengers']}
-🔻 Скидка: {result['discount_percent']}%
-💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
-"""
-        bot.send_message(chat_id, text)
+  📍 {route}
+  👤 Взр: {adults} | 🧒 Дет: {children} | 🐶 Жив: {animals}
+  🎟 Всего: {result['passengers']}
+  🔻 Скидка: {result['discount_percent']}%
+  💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
+  """
+
+bot.send_message(chat_id, text)
         ask_phone(chat_id)
 
     elif call.data.startswith("loc_"):
