@@ -115,8 +115,7 @@ def callback_handler(call):
 💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
 """
         bot.send_message(chat_id, text)
-
-elif call.data.startswith("calc_route_"):
+   elif call.data.startswith("calc_route_"):
         route = call.data.split("_", 1)[1]
         user_data[chat_id]["route"] = route
 
