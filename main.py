@@ -75,20 +75,20 @@ def show_main_menu(message):
     )
     bot.send_message(chat_id, "Добро пожаловать! 👋", reply_markup=markup)
 
-# ---------- ОБРАБОТЧИК КНОПОК ---------- #
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
 
-  if call.data == "start_booking":
+    if call.data == "start_booking":
         user_data[chat_id] = {}
         msg = bot.send_message(chat_id, "Введите имя:")
         bot.register_next_step_handler(msg, get_name)
-        
-   elif call.data == "info":
+
+    elif call.data == "info":
         bot.answer_callback_query(call.id)
         bot.send_message(chat_id, "📄 Для поездки в Грузию вам понадобятся:\n\n"
-                                  "🛂 загранпаспорт\n"
+                                  "🛂 Паспорт РФ или загранпаспорт\n"
+                                  "🧾 COVID-сертификат — по ситуации\n"
                                   "🚫 Виза не нужна для граждан РФ\n\n"
                                   "📌 Уточняйте детали у водителя или администратора.")
 
@@ -107,7 +107,7 @@ def callback_handler(call):
 
 📍 {route}
 👤 Взр: {adults} | 🧒 Дет: {children} | 🐶 Жив: {animals}
-🎟️ Всего: {result['passengers']}
+🎟 Всего: {result['passengers']}
 🔻 Скидка: {result['discount_percent']}%
 💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
 """
