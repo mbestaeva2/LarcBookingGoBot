@@ -84,6 +84,13 @@ def callback_handler(call):
         user_data[chat_id] = {}
         msg = bot.send_message(chat_id, "Введите имя:")
         bot.register_next_step_handler(msg, get_name)
+        
+  elif call.data == "info":
+        bot.answer_callback_query(call.id)
+        bot.send_message(chat_id, "📄 Для поездки в Грузию вам понадобятся:\n\n"
+                                  "🛂 загранпаспорт\n"
+                                  "🚫 Виза не нужна для граждан РФ\n\n"
+                                  "📌 Уточняйте детали у водителя или администратора.")
 
     elif call.data.startswith("route_"):
         route = call.data.split("_", 1)[1]
