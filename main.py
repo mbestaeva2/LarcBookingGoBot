@@ -169,23 +169,35 @@ def get_name(message):
     msg = bot.send_message(chat_id, "Введите дату поездки:")
     bot.register_next_step_handler(msg, get_date)
 
-def get_date(message):
-    chat_id = message.chat.id
-    user_data[chat_id]["date"] = message.text
-    msg = bot.send_message(chat_id, "Сколько взрослых?")
-    bot.register_next_step_handler(msg, get_adults)
+  def get_date(message):
+        chat_id = message.chat.id
+        try:
+            user_data[chat_id]["date"] = message.text  # здесь нет необходимости в try, но оставим на всякий
+            msg = bot.send_message(chat_id, "Сколько взрослых?")
+            bot.register_next_step_handler(msg, get_adults)
+        except Exception:
+            msg = bot.send_message(chat_id, "Произошла ошибка. Введите дату ещё раз:")
+            bot.register_next_step_handler(msg, get_date)
 
-def get_adults(message):
-    chat_id = message.chat.id
-    user_data[chat_id]["adults"] = message.text
-    msg = bot.send_message(chat_id, "Сколько детей?")
-    bot.register_next_step_handler(msg, get_children)
+    def get_adults_for_price(message):
+        chat_id = message.chat.id
+        try:
+            user_data[chat_id]["adults"] = int(message.text)
+            msg = bot.send_message(chat_id, "Сколько детей?")
+            bot.register_next_step_handler(msg, get_children_for_price)
+        except ValueError:
+            msg = bot.send_message(chat_id, "Пожалуйста, введите число (например: 2)")
+            bot.register_next_step_handler(msg, get_adults_for_price)
 
-def get_children(message):
-    chat_id = message.chat.id
-    user_data[chat_id]["children"] = message.text
-    msg = bot.send_message(chat_id, "Сколько животных?")
-    bot.register_next_step_handler(msg, get_animals)
+    def get_children(message):
+        chat_id = message.chat.id
+        try:
+            user_data[chat_id]["children"] = int(message.text)
+            msg = bot.send_message(chat_id, "Сколько животных?")
+            bot.register_next_step_handler(msg, get_animals)
+        except ValueError:
+            msg = bot.send_message(chat_id, "Пожалуйста, введите число (например: 2)")
+            bot.register_next_step_handler(msg, get_children)
 
 def get_animals(message):
     chat_id = message.chat.id
