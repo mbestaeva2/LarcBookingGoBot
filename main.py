@@ -19,7 +19,7 @@ def calculate_price(adults, children, animals, route):
         price_pet = 500
     
     # Меняем цены в зависимости от маршрута
-    if "Батуми" in route:
+    elif "Батуми" in route:
         price_adult = 6000
         price_child = 4000
         price_pet = 1000
