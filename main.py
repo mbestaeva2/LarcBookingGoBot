@@ -116,27 +116,25 @@ def callback_handler(call):
 """
         bot.send_message(chat_id, text)
 
-    elif call.data.startswith("route_"):
+elif call.data.startswith("calc_route_"):
         route = call.data.split("_", 1)[1]
         user_data[chat_id]["route"] = route
 
-        # Сбор данных
         adults = int(user_data[chat_id].get("adults", 0))
         children = int(user_data[chat_id].get("children", 0))
         animals = int(user_data[chat_id].get("animals", 0))
 
-       result = calculate_price(adults, children, animals, route)
+        result = calculate_price(adults, children, animals, route)
 
-text = f"""💰 Стоимость:
+        text = f"""💰 Примерная стоимость:
 
-  📍 {route}
-  👤 Взр: {adults} | 🧒 Дет: {children} | 🐶 Жив: {animals}
-  🎟 Всего: {result['passengers']}
-  🔻 Скидка: {result['discount_percent']}%
-  💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
-  """
-
-bot.send_message(chat_id, text)
+📍 {route}
+👤 Взр: {adults} | 🧒 Дет: {children} | 🐶 Жив: {animals}
+🎟 Всего: {result['passengers']}
+🔻 Скидка: {result['discount_percent']}%
+💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
+"""
+        bot.send_message(chat_id, text)
         ask_phone(chat_id)
 
     elif call.data.startswith("loc_"):
