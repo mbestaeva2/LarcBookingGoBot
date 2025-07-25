@@ -5,8 +5,7 @@ from telebot import types
 
 # Получаем токен из переменной окружения
 TOKEN = os.getenv("BOT_TOKEN")
-if not TOKEN:
-    raise ValueError("Переменная BOT_TOKEN не найдена! 😱")
+
 bot = telebot.TeleBot(TOKEN)
 ADMIN_ID = 561665893
 user_data = {}
