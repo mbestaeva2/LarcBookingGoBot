@@ -74,7 +74,7 @@ def show_main_menu(chat_id):
     )
     bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
     
-    @bot.message_handler(content_types=['contact'])
+@bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     chat_id = message.chat.id
     if message.contact is not None:
@@ -94,7 +94,7 @@ def handle_contact(message):
             types.InlineKeyboardButton("Другое", callback_data="loc_other")
         )
         bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
-    @bot.callback_query_handler(func=lambda call: True)
+@bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
     if call.data == "start_booking":
