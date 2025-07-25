@@ -94,8 +94,7 @@ def callback_handler(call):
         animals = int(user_data[chat_id].get("animals", 0))
 
         result = calculate_price(adults, children, animals, route)
-
-        user_data[chat_id]["price"] = result  # сохраним расчёт, если пригодится
+        user_data[chat_id]["price"] = result
 
         text = f"""💰 Примерная стоимость:
 
@@ -105,25 +104,22 @@ def callback_handler(call):
 🔻 Скидка: {result['discount_percent']}%
 💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
 """
-
         bot.send_message(chat_id, text)
 
-        # Кнопки подтвердить / отменить
         markup = types.InlineKeyboardMarkup()
         markup.add(
             types.InlineKeyboardButton("✅ Да, хочу оформить", callback_data="confirm_booking"),
             types.InlineKeyboardButton("❌ Нет, спасибо", callback_data="cancel_booking")
         )
         bot.send_message(chat_id, "Хотите оформить заявку на поездку?", reply_markup=markup)
-        
+
     elif call.data == "confirm_booking":
+        user_data[chat_id] = user_data.get(chat_id, {})
         msg = bot.send_message(chat_id, "Отлично! Введите имя:")
-        user_data[chat_id] = user_data.get(chat_id, {})  # на всякий случай
         bot.register_next_step_handler(msg, get_name)
 
     elif call.data == "cancel_booking":
         bot.send_message(chat_id, "Хорошо 😊 Если передумаете — нажмите /start")
-
 
     elif call.data.startswith("loc_"):
         locs = {
@@ -136,7 +132,6 @@ def callback_handler(call):
         loc_key = call.data.split("_", 1)[1]
         user_data[chat_id]["location"] = locs.get(loc_key, "Неизвестно")
 
-        # Финальная заявка
         data = user_data[chat_id]
         message_text = f"""📩 Новая заявка:
 
@@ -147,8 +142,9 @@ def callback_handler(call):
 📞 Телефон: {data['phone']}
 🚗 Локация: {data['location']}
 """
-        bot.send_message(561665893, message_text)
+        bot.send_message(561665893, message_text)  # Заменить ID при необходимости
         bot.send_message(chat_id, "✅ Спасибо! Заявка отправлена. Мы с вами скоро свяжемся.")
+        
 # ---------- ШАГИ АНКЕТЫ ---------- #
 def get_name(message):
     chat_id = message.chat.id
