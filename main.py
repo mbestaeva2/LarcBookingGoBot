@@ -11,16 +11,28 @@ bot = telebot.TeleBot(TOKEN)
 ADMIN_ID = 561665893
 user_data = {}
 
-def calculate_price(adults, children, animals):
+def calculate_price(adults, children, animals, route):
+    # Тарифы по умолчанию
     price_adult = 3000
     price_child = 2000
     price_pet = 500
 
-    usd_rate = 92.0
-    gel_rate = 30.0
-    eur_rate = 100.0
+    # Меняем цены в зависимости от маршрута
+    if "Батуми" in route:
+        price_adult = 6000
+        price_child = 4000
+        price_pet = 1000
+    elif "Кутаиси" in route:
+        price_adult = 5000
+        price_child = 3500
+        price_pet = 800
+    elif "Степанцминда" in route:
+        price_adult = 2000
+        price_child = 1500
+        price_pet = 500
 
-    total_rub = adults * price_adult + children * price_child + animals * price_pet
+    # Дальше как раньше
+   total_rub = adults * price_adult + children * price_child + animals * price_pet
     total_passengers = adults + children + animals
 
     if total_passengers >= 7:
