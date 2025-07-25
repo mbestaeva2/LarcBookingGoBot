@@ -85,7 +85,7 @@ def callback_handler(call):
         msg = bot.send_message(chat_id, "Введите имя:")
         bot.register_next_step_handler(msg, get_name)
         
-  elif call.data == "info":
+   elif call.data == "info":
         bot.answer_callback_query(call.id)
         bot.send_message(chat_id, "📄 Для поездки в Грузию вам понадобятся:\n\n"
                                   "🛂 загранпаспорт\n"
