@@ -86,6 +86,7 @@ def callback_handler(call):
         bot.register_next_step_handler(msg, get_adults_for_price)
 
     elif call.data.startswith("calc_route_"):
+        bot.answer_callback_query(call.id)
         route = call.data.split("_", 1)[1]
         user_data[chat_id]["route"] = route
 
@@ -114,14 +115,16 @@ def callback_handler(call):
         bot.send_message(chat_id, "Хотите оформить заявку на поездку?", reply_markup=markup)
 
     elif call.data == "confirm_booking":
-        user_data[chat_id] = user_data.get(chat_id, {})
+        bot.answer_callback_query(call.id)
         msg = bot.send_message(chat_id, "Отлично! Введите имя:")
         bot.register_next_step_handler(msg, get_name)
 
     elif call.data == "cancel_booking":
+        bot.answer_callback_query(call.id)
         bot.send_message(chat_id, "Хорошо 😊 Если передумаете — нажмите /start")
 
     elif call.data.startswith("loc_"):
+        bot.answer_callback_query(call.id)
         locs = {
             "airport": "Аэропорт",
             "station": "Ж/д вокзал",
