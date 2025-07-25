@@ -59,7 +59,7 @@ total_eur = round(final_total_rub / eur_rate, 2)
         "final_usd": total_usd,
         "final_gel": total_gel,
         "final_eur": total_eur
-}
+    }
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
