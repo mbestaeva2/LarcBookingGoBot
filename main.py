@@ -298,17 +298,17 @@ def finish_booking(chat_id):
 Отправить заявку?
 """
 
-    markup = types.InlineKeyboardMarkup()
-    markup.add(
-        types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
-        types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")
-    )
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
+            types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")
+        )
 
-    bot.send_message(chat_id, summary, reply_markup=markup)
+        bot.send_message(chat_id, summary, reply_markup=markup)
 
-except Exception as e:
-    bot.send_message(chat_id, f"Ошибка при расчёте: {e}")
-
+    except Exception as e:
+        bot.send_message(chat_id, f"Ошибка при расчёте: {e}")
+    
 
 if __name__ == '__main__':
 bot.polling(none_stop=True, timeout=60)
