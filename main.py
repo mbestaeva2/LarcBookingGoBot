@@ -62,6 +62,17 @@ def calculate_price(adults, children, animals, route):
         "passengers": total_passengers
     }
 
+@bot.message_handler(commands=['start'])
+def show_main_menu(message):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
+        types.InlineKeyboardButton("💰 Рассчитать стоимость", callback_data="calc_price"),
+        types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
+        types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
+    )
+    bot.send_message(message.chat.id, "Привет! 👋 Выберите действие:", reply_markup=markup)
+
 # ---------- СТАРТ ---------- #
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
