@@ -108,6 +108,15 @@ def ask_route(chat_id):
     )
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
 
+locs = {
+    "airport": "Аэропорт",
+    "station": "Ж/д вокзал",
+    "address": "С адреса во Владикавказе",
+    "didube": "Станция метро Дидубе",
+    "other": "Другое"
+}
+user_data[chat_id]["location"] = locs.get(call.data.split("_", 1)[1], "Неизвестно")
+
 def ask_location(chat_id):
     markup = types.InlineKeyboardMarkup()
     markup.add(
