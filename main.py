@@ -59,19 +59,24 @@ def show_main_menu(chat_id):
         types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
     )
     bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
+
+@bot.message_handler(func=lambda m: m.text == "📱 Отправить номер телефона")
+def request_contact(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    button = types.KeyboardButton("📲 Поделиться номером", request_contact=True)
+    markup.add(button)
+    msg = bot.send_message(message.chat.id, "Пожалуйста, нажмите кнопку ниже, чтобы отправить номер телефона:", reply_markup=markup)
+    bot.register_next_step_handler(msg, handle_contact)
     
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     chat_id = message.chat.id
-    if message.contact is not None:
-        user_data[chat_id]["phone"] = message.contact.phone_number  # сохраняем реальный номер
-
-        hide_markup = types.ReplyKeyboardRemove()
-        bot.send_message(chat_id, "Спасибо! Номер получен ✅", reply_markup=hide_markup)
-
+    if message.contact:
+        user_data[chat_id]["phone"] = message.contact.phone_number
+        bot.send_message(chat_id, "Спасибо! Номер получен ✅", reply_markup=types.ReplyKeyboardRemove())
         # Переходим к следующему шагу
         ask_location(chat_id)
-
+        
         # Переходим к следующему шагу — выбор локации
         markup = types.InlineKeyboardMarkup()
         markup.add(
