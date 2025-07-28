@@ -47,52 +47,46 @@ def calculate_price(adults, children, animals):
         "final_eur": total_eur
     }
 
-@bot.message_handler(commands=['start'])
-def handle_start(message):
-    show_main_menu(message.chat.id)
-
-def show_main_menu(chat_id):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(
-        types.InlineKeyboardButton("Рассчитать стоимость", callback_data="start_booking"),
-        types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
-        types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
-    )
-    bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
-
-from telebot import types
-
-def ask_phone(chat_id):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    button = types.KeyboardButton("📱 Отправить номер", request_contact=True)
-    markup.add(button)
-    bot.send_message(chat_id, "📞 Пожалуйста, нажмите кнопку, чтобы отправить свой номер телефона:", reply_markup=markup)
-    
-@bot.message_handler(content_types=['contact'])
-def handle_contact(message):
-    chat_id = message.chat.id
-    if message.contact:
-        user_data[chat_id]["phone"] = message.contact.phone_number
-        bot.send_message(chat_id, "Спасибо! Номер получен ✅", reply_markup=types.ReplyKeyboardRemove())
-        # Переходим к следующему шагу
-        ask_location(chat_id)@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=["start"])
 def start(message):
     chat_id = message.chat.id
     user_data[chat_id] = {}
-    bot.send_message(chat_id, "Добро пожаловать! Сколько взрослых пассажиров?")
-    bot.register_next_step_handler(message, get_adults)
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Забронировать поездку", callback_data="start_booking"))
+    bot.send_message(chat_id, "Привет! Что вы хотите сделать?", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+    chat_id = call.message.chat.id
+    if call.data == "start_booking":
+        msg = bot.send_message(chat_id, "Сколько взрослых?")
+        bot.register_next_step_handler(msg, get_adults)
+    elif call.data.startswith("route_"):
+        route = call.data.split("_", 1)[1]
+        user_data[chat_id]["route"] = route
+        ask_location(chat_id)
+    elif call.data.startswith("loc_"):
+        locs = {
+            "airport": "Аэропорт",
+            "station": "Ж/д вокзал",
+            "address": "С адреса во Владикавказе",
+            "didube": "Станция метро Дидубе",
+            "other": "Другое"
+        }
+        user_data[chat_id]["location"] = locs.get(call.data.split("_", 1)[1], "Неизвестно")
+        bot.send_message(chat_id, "Спасибо! Заявка почти готова.")
 
 def get_adults(message):
     chat_id = message.chat.id
-    user_data[chat_id]["passengers"] = message.text
-    bot.send_message(chat_id, "Сколько детей? 👶:")
-    bot.register_next_step_handler(message, get_children)
+    user_data[chat_id]["adults"] = message.text
+    msg = bot.send_message(chat_id, "Сколько детей?")
+    bot.register_next_step_handler(msg, get_children)
 
 def get_children(message):
     chat_id = message.chat.id
     user_data[chat_id]["children"] = message.text
-    bot.send_message(chat_id, "Сколько животных? 🐶:")
-    bot.register_next_step_handler(message, get_animals)
+    msg = bot.send_message(chat_id, "Сколько животных?")
+    bot.register_next_step_handler(msg, get_animals)
 
 def get_animals(message):
     chat_id = message.chat.id
@@ -108,15 +102,6 @@ def ask_route(chat_id):
     )
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
 
-locs = {
-    "airport": "Аэропорт",
-    "station": "Ж/д вокзал",
-    "address": "С адреса во Владикавказе",
-    "didube": "Станция метро Дидубе",
-    "other": "Другое"
-}
-user_data[chat_id]["location"] = locs.get(call.data.split("_", 1)[1], "Неизвестно")
-
 def ask_location(chat_id):
     markup = types.InlineKeyboardMarkup()
     markup.add(
@@ -126,7 +111,7 @@ def ask_location(chat_id):
         types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
         types.InlineKeyboardButton("Другое", callback_data="loc_other")
     )
-    bot.send_message(chat_id, "📍 Откуда будет выезд?", reply_markup=markup)
+    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=markup)
 
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
@@ -160,14 +145,7 @@ def callback_handler(call):
         ask_phone(chat_id)
 
     elif call.data.startswith("loc_"):
-        locs = {
-            "airport": "Аэропорт",
-            "station": "Ж/д вокзал",
-            "address": "С адреса во Владикавказе",
-            "didube": "Станция метро Дидубе",
-            "other": "Другое"
-        }
-        
+       
         user_data[chat_id]["location"] = locs.get(call.data.split("_", 1)[1], "Неизвестно")
         finish_booking(chat_id)
         #show_summary(chat_id)
