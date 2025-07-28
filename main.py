@@ -103,7 +103,7 @@ def callback_handler(call):
         
         user_data[chat_id]["location"] = locs.get(call.data.split("_", 1)[1], "Неизвестно")
         finish_booking(chat_id)
-        show_summary(chat_id)
+        #show_summary(chat_id)
 
     elif call.data == "confirm_yes":
         data = user_data.get(chat_id, {})
