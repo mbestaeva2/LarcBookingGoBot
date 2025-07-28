@@ -76,7 +76,7 @@ def callback_handler(call):
         show_main_menu(chat_id)
 
 
-📌 Уточняйте детали у водителя или администратора.""")
+
     elif call.data.startswith("route_"):
         route = call.data.split("_", 1)[1]
         data["route"] = route
