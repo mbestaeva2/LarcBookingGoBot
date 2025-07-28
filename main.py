@@ -118,3 +118,6 @@ def callback_handler(call):
 💵 {result['final_rub']} ₽ | {result['final_usd']} $ | {result['final_eur']} € | {result['final_gel']} ₾
 """
         bot.send_message(chat_id, text)
+
+if __name__ == "__main__":
+    bot.polling(none_stop=True)
