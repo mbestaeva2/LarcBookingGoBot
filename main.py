@@ -1,13 +1,13 @@
 
 
 from telebot import TeleBot, types
-import os
 
+import os
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = TeleBot(TOKEN)
 ADMIN_ID = 561665893
-bot = telebot.TeleBot(TOKEN)
+
 user_data = {}
 
 
