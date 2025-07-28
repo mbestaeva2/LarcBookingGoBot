@@ -64,7 +64,7 @@ def handle_start(message):
 def show_main_menu(chat_id):
    markup = types.InlineKeyboardMarkup(row_width=1)
    markup.add(
-       types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
+       types.InlineKeyboardButton("🚐 Рассчитать стоимость поездки", callback_data="start_booking"),
        types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
        types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
    )
@@ -155,7 +155,7 @@ def get_name(message):
 def get_date(message):
    chat_id = message.chat.id
    user_data[chat_id]["date"] = message.text
-   msg = bot.send_message(chat_id, "Сколько пассажиров?")
+   msg = bot.send_message(chat_id, "Сколько взрослых?")
    bot.register_next_step_handler(msg, get_passengers)
 
 
