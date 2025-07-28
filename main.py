@@ -64,11 +64,13 @@ def show_main_menu(chat_id):
 def handle_contact(message):
     chat_id = message.chat.id
     if message.contact is not None:
-        user_data[chat_id]["phone"] = message.contact.phone_number
+        user_data[chat_id]["phone"] = message.contact.phone_number  # сохраняем реальный номер
 
-        # Убираем клавиатуру
         hide_markup = types.ReplyKeyboardRemove()
-        bot.send_message(chat_id, "Спасибо! Номер получен. Теперь выберите место выезда:", reply_markup=hide_markup)
+        bot.send_message(chat_id, "Спасибо! Номер получен ✅", reply_markup=hide_markup)
+
+        # Переходим к следующему шагу
+        ask_location(chat_id)
 
         # Переходим к следующему шагу — выбор локации
         markup = types.InlineKeyboardMarkup()
