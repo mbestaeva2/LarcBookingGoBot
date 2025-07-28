@@ -75,6 +75,57 @@ def handle_contact(message):
         user_data[chat_id]["phone"] = message.contact.phone_number
         bot.send_message(chat_id, "Спасибо! Номер получен ✅", reply_markup=types.ReplyKeyboardRemove())
         # Переходим к следующему шагу
+        ask_location(chat_id)@bot.message_handler(commands=['start'])
+def start(message):
+    chat_id = message.chat.id
+    user_data[chat_id] = {}
+    bot.send_message(chat_id, "Добро пожаловать! Сколько взрослых пассажиров?")
+    bot.register_next_step_handler(message, get_adults)
+
+def get_adults(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["passengers"] = message.text
+    bot.send_message(chat_id, "Сколько детей? 👶:")
+    bot.register_next_step_handler(message, get_children)
+
+def get_children(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["children"] = message.text
+    bot.send_message(chat_id, "Сколько животных? 🐶:")
+    bot.register_next_step_handler(message, get_animals)
+
+def get_animals(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["animals"] = message.text
+    ask_route(chat_id)
+
+def ask_route(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("Владикавказ — Тбилиси", callback_data="route_Владикавказ — Тбилиси"),
+        types.InlineKeyboardButton("Владикавказ — Батуми", callback_data="route_Владикавказ — Батуми"),
+        types.InlineKeyboardButton("Тбилиси — Владикавказ", callback_data="route_Тбилиси — Владикавказ")
+    )
+    bot.send_message(chat_id, "Выберите маршрут:", reply_markup=markup)
+
+def ask_location(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+        types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
+        types.InlineKeyboardButton("Другое", callback_data="loc_other")
+    )
+    bot.send_message(chat_id, "📍 Откуда будет выезд?", reply_markup=markup)
+
+@bot.message_handler(content_types=['contact'])
+def handle_contact(message):
+    chat_id = message.chat.id
+    if message.contact is not None:
+        user_data[chat_id]["phone"] = message.contact.phone_number
+        hide_markup = types.ReplyKeyboardRemove()
+        bot.send_message(chat_id, "Спасибо! Номер получен ✅", reply_markup=hide_markup)
         ask_location(chat_id)
         
         # Переходим к следующему шагу — выбор локации
