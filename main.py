@@ -1,8 +1,8 @@
 
 import telebot
-from telebot import types
+
 import os
-OKEN = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("BOT_TOKEN")
 bot = TeleBot(TOKEN)
 
 ADMIN_ID = 561665893
