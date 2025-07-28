@@ -332,6 +332,12 @@ def finish_booking(chat_id):
    except Exception as e:
        bot.send_message(chat_id, f"Ошибка при расчёте: {e}")
 
+@bot.message_handler(func=lambda message: True)
+def catch_group_id(message):
+    if message.chat.type in ['group', 'supergroup']:
+        print(f"📣 Группа ID: {message.chat.id}")
+        bot.send_message(message.chat.id, f"ID группы: `{message.chat.id}`", parse_mode="Markdown")
+
 
 
 
