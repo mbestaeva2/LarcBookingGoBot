@@ -54,7 +54,7 @@ def handle_start(message):
 def show_main_menu(chat_id):
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
-        types.InlineKeyboardButton("🚐 Забронировать поездку", callback_data="start_booking"),
+        types.InlineKeyboardButton("Рассчитать стоимость", callback_data="start_booking"),
         types.InlineKeyboardButton("📄 Информация о документах", callback_data="info"),
         types.InlineKeyboardButton("❓ Задать вопрос", url="https://t.me/TransverTbilisi")
     )
@@ -124,7 +124,11 @@ def callback_handler(call):
         show_main_menu(chat_id)
 
     elif call.data == "info":
-        bot.send_message(chat_id, "Для поездки необходимо иметь паспорт и ПЦР-тест.")
+        bot.send_message(chat_id, "Для поездки необходимо иметь загранпаспорт(обьязательно, внутренний не подойдет\n"
+                        "Загранпаспорт ребенка, свидетельство о рождении(на границе могут потребовать)\n"
+                        "Для животных: Ветпаспорт с прививкой от бешенства,\n"
+                        "Справка формы\n"
+                        "Наличие чипа(желательно")
         show_main_menu(chat_id)
 
 def get_name(message):
@@ -136,7 +140,7 @@ def get_name(message):
 def get_date(message):
     chat_id = message.chat.id
     user_data[chat_id]["date"] = message.text
-    msg = bot.send_message(chat_id, "Сколько пассажиров?")
+    msg = bot.send_message(chat_id, "Сколько взрослых?")
     bot.register_next_step_handler(msg, get_passengers)
 
 def get_passengers(message):
@@ -286,7 +290,7 @@ def finish_booking(chat_id):
 
         markup = types.InlineKeyboardMarkup()
         markup.add(
-            types.InlineKeyboardButton("✅ Подтвердить", callback_data="confirm_yes"),
+            types.InlineKeyboardButton("✅ Забронировать", callback_data="confirm_yes"),
             types.InlineKeyboardButton("❌ Отменить", callback_data="confirm_no")
         )
 
