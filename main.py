@@ -3,6 +3,7 @@
 from telebot import TeleBot, types
 
 import os
+ADNIN_GROUP_ID = -4948043121
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = TeleBot(TOKEN)
@@ -299,7 +300,7 @@ def finish_booking(chat_id):
 💶 В евро: {result['final_eur']} €
 🇬🇪 В лари: {result['final_gel']} ₾
 """
-       bot.send_message(chat_id, price_message)
+       bot.send_message(4948043121, admin__text)
 
 
        summary = f"""🔎 Проверьте данные заявки:
