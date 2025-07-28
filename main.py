@@ -60,13 +60,13 @@ def show_main_menu(chat_id):
     )
     bot.send_message(chat_id, "Главное меню:", reply_markup=markup)
 
-@bot.message_handler(func=lambda m: m.text == "📱 Отправить номер телефона")
-def request_contact(message):
+from telebot import types
+
+def ask_phone(chat_id):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    button = types.KeyboardButton("📲 Поделиться номером", request_contact=True)
+    button = types.KeyboardButton("📱 Отправить номер", request_contact=True)
     markup.add(button)
-    msg = bot.send_message(message.chat.id, "Пожалуйста, нажмите кнопку ниже, чтобы отправить номер телефона:", reply_markup=markup)
-    bot.register_next_step_handler(msg, handle_contact)
+    bot.send_message(chat_id, "📞 Пожалуйста, нажмите кнопку, чтобы отправить свой номер телефона:", reply_markup=markup)
     
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
