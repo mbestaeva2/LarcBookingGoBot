@@ -1,10 +1,9 @@
 
-import telebot
-
+from telebot import TeleBot, types
 import os
-TOKEN = os.getenv("BOT_TOKEN")
-bot = telebot.TeleBot(TOKEN)
 
+TOKEN = os.getenv("BOT_TOKEN")
+bot = TeleBot(TOKEN)
 ADMIN_ID = 561665893
 
 user_data = {}
