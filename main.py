@@ -111,6 +111,8 @@ def callback_handler(call):
 Маршрут: {data.get('route')}
 Телефон: {data.get('phone')}
 Пассажиры: {data.get('passengers')}
+Дети: {data.get('children')}
+Животные: {data.get('animals')}
 Локация: {data.get('location')}
 """
         bot.send_message(ADMIN_GROUP_ID, summary)
@@ -124,7 +126,7 @@ def callback_handler(call):
     elif call.data == "info":
         bot.send_message(chat_id, "📄 Для поездки необходимо иметь паспорт и ПЦР-тест.")
         show_main_menu(call.message)
-        
+
 def get_name(message):
     chat_id = message.chat.id
     user_data[chat_id]["name"] = message.text
@@ -147,7 +149,8 @@ def get_children(message):
     chat_id = message.chat.id
     user_data[chat_id]["children"] = message.text
     msg = bot.send_message(chat_id, "Сколько животных?")
-    bot.register_next_step_handler(msg, get_animals)
+
+bot.register_next_step_handler(msg, get_animals)
 
 def get_animals(message):
     chat_id = message.chat.id
@@ -176,7 +179,7 @@ def show_summary(chat_id):
 📅 Дата: {data.get('date')}
 🚗 Маршрут: {data.get('route')}
 📞 Телефон: {data.get('phone')}
-👨‍👩‍👧 Пассажиры: {data.get('passengers')}
+👨‍👩‍👧 Взрослые: {data.get('passengers')}
 👶 Дети: {data.get('children')}
 🐾 Животные: {data.get('animals')}
 📍 Локация: {data.get('location')}
@@ -188,5 +191,6 @@ def show_summary(chat_id):
     )
     bot.send_message(chat_id, summary, reply_markup=markup)
 
+# ⛔ Была ошибка: должно быть name а не name
 if __name__ == "__main__":
     bot.polling(none_stop=True)
