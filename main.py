@@ -150,7 +150,6 @@ def get_children(message):
     user_data[chat_id]["children"] = message.text
     msg = bot.send_message(chat_id, "Сколько животных?")
 
-bot.register_next_step_handler(msg, get_animals)
 
 def get_animals(message):
     chat_id = message.chat.id
