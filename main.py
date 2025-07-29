@@ -12,50 +12,56 @@ ADMIN_ID = 561665893
 user_data = {}
 
 
-def calculate_price(adults, children, animals):
-   price_adult = 3000
-   price_child = 2000
-   price_pet = 500
+# ---------- ФУНКЦИЯ РАСЧЁТА ---------- #
+def calculate_price(adults, children, animals, route):
+    # Базовые цены по маршруту
+    if "Батуми" in route:
+        price_adult = 6000
+        price_child = 4000
+        price_pet = 1000
+    elif "Кутаиси" in route:
+        price_adult = 5000
+        price_child = 3500
+        price_pet = 800
+    elif "Степанцминда" in route:
+        price_adult = 2000
+        price_child = 1500
+        price_pet = 500
+    else:
+        # Для маршрутов Владикавказ—Тбилиси и Тбилиси—Владикавказ
+        price_adult = 3000
+        price_child = 2000
+        price_pet = 500
 
+    # Подсчёт стоимости
+    total = adults * price_adult + children * price_child + animals * price_pet
+    total_passengers = adults + children + animals
 
-   usd_rate = 92.0
-   gel_rate = 30.0
-   eur_rate = 100.0
+    # Скидки
+    if total_passengers >= 7:
+        discount = 15
+    elif total_passengers >= 5:
+        discount = 10
+    elif total_passengers >= 3:
+        discount = 5
+    else:
+        discount = 0
 
+    final_rub = int(total * (1 - discount / 100))
 
-   total_rub = adults * price_adult + children * price_child + animals * price_pet
-   total_passengers = adults + children + animals
+    # Конвертация валют (можешь заменить на API)
+    usd_rate = 90
+    eur_rate = 100
+    gel_rate = 32
 
-
-   if total_passengers >= 7:
-       discount_percent = 15
-   elif total_passengers >= 5:
-       discount_percent = 10
-   elif total_passengers >= 3:
-       discount_percent = 5
-   else:
-       discount_percent = 0
-
-
-   discount_amount = total_rub * (discount_percent / 100)
-   final_total_rub = total_rub - discount_amount
-
-
-   total_usd = round(final_total_rub / usd_rate, 2)
-   total_gel = round(final_total_rub / gel_rate, 2)
-   total_eur = round(final_total_rub / eur_rate, 2)
-
-
-   return {
-       "passengers": total_passengers,
-       "discount_percent": discount_percent,
-        "initial_rub": total_rub,
-       "final_rub": round(final_total_rub, 2),
-       "final_usd": total_usd,
-       "final_gel": total_gel,
-       "final_eur": total_eur
-   }
-
+    return {
+        "final_rub": final_rub,
+        "final_usd": round(final_rub / usd_rate, 2),
+        "final_eur": round(final_rub / eur_rate, 2),
+        "final_gel": round(final_rub / gel_rate, 2),
+        "discount_percent": discount,
+        "passengers": total_passengers
+    }
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
