@@ -155,6 +155,7 @@ bot.register_next_step_handler(msg, get_animals)
 def get_animals(message):
     chat_id = message.chat.id
     user_data[chat_id]["animals"] = message.text
+
     markup = types.InlineKeyboardMarkup()
     markup.add(
         types.InlineKeyboardButton("Владикавказ — Тбилиси", callback_data="route_Владикавказ — Тбилиси"),
