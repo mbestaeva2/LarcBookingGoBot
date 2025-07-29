@@ -82,6 +82,7 @@ def handle_contact(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     chat_id = call.message.chat.id
+
     if call.data == "start_booking":
         user_data[chat_id] = {}
         msg = bot.send_message(chat_id, "Введите имя:")
@@ -114,8 +115,7 @@ def callback_handler(call):
 """
         bot.send_message(ADMIN_GROUP_ID, summary)
         bot.send_message(chat_id, "Заявка отправлена ✅")
-
-show_main_menu(call.message)
+        show_main_menu(call.message)
 
     elif call.data == "confirm_no":
         bot.send_message(chat_id, "Заявка отменена ❌")
@@ -124,7 +124,7 @@ show_main_menu(call.message)
     elif call.data == "info":
         bot.send_message(chat_id, "📄 Для поездки необходимо иметь паспорт и ПЦР-тест.")
         show_main_menu(call.message)
-
+        
 def get_name(message):
     chat_id = message.chat.id
     user_data[chat_id]["name"] = message.text
