@@ -300,7 +300,7 @@ def finish_booking(chat_id):
 💶 В евро: {result['final_eur']} €
 🇬🇪 В лари: {result['final_gel']} ₾
 """
-       bot.send_message(4948043121, price_message)
+       bot.send_message(-4948043121, price_message)
 
 
        summary = f"""🔎 Проверьте данные заявки:
