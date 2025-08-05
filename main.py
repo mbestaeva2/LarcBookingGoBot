@@ -192,5 +192,5 @@ def show_summary(chat_id):
     bot.send_message(chat_id, summary, reply_markup=markup)
 
 # ⛔ Была ошибка: должно быть name а не name
-if __name__ == "__main__":
-    bot.polling(none_stop=True)
+if name == '__main__':
+    bot.polling(none_stop=True, interval=0, timeout=20, drop_pending_updates=True)
