@@ -193,4 +193,4 @@ def show_summary(chat_id):
 
 # ⛔ Была ошибка: должно быть name а не name
 if __name__ == '__main__':
-    bot.polling(none_stop=True, interval=0, timeout=20, drop_pending_updates=True)
+    bot.polling(none_stop=True, interval=0, timeout=20)
