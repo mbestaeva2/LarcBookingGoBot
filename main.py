@@ -91,8 +91,8 @@ def on_route_selected(call):
     animals = data.get('animals', 0)
 
     price = calculate_price(adults, children, animals, route)
-    bot.send_message(chat_id, f"✅ Стоимость поездки по маршруту {route}:
-💵 {price}₽")
+    bot.send_message(chat_id, f" Стоимость поездки по маршруту {route}:
+ {price}₽")
 
 print("Бот запущен...")
 bot.polling(none_stop=True)
