@@ -50,6 +50,13 @@ def handle_calc_button(message):
     msg = bot.send_message(chat_id, "Сколько взрослых пассажиров?")
     bot.register_next_step_handler(msg, get_adults)
 
+def get_name(message):
+    chat_id = message.chat.id
+    user_data[chat_id] = {}
+    user_data[chat_id]["name"] = message.text
+    msg = bot.send_message(chat_id, "Сколько взрослых пассажиров?")
+    bot.register_next_step_handler(msg, get_adults)
+
 def get_adults(message):
     chat_id = message.from_user.id
     try:
