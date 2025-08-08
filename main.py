@@ -1,9 +1,6 @@
 
 import os
-
 from telebot import TeleBot, types
-
-
 
 TOKEN = os.getenv("BOT_TOKEN")
 print("TOKEN:", TOKEN)
@@ -87,7 +84,7 @@ def get_animals(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("route_"))
 def on_route_selected(call):
-    chat_id = call.message.chat.id
+    chat_id = call.from_user.id
     route = call.data.replace("route_", "")
     data = user_data.get(chat_id, {})
     adults = data.get('adults', 0)
@@ -104,7 +101,7 @@ def on_route_selected(call):
 
 @bot.callback_query_handler(func=lambda call: call.data == "confirm_booking")
 def confirm_booking(call):
-    chat_id = call.message.chat.id
+    chat_id = call.from_user.id
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     button = types.KeyboardButton("Отправить номер", request_contact=True)
     markup.add(button)
@@ -112,7 +109,7 @@ def confirm_booking(call):
 
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     if message.contact:
         user_data[chat_id]["phone"] = message.contact.phone_number
 
@@ -128,7 +125,7 @@ def handle_contact(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("loc_"))
 def finish_booking(call):
-    chat_id = call.message.chat.id
+    chat_id = call.from_user.id
     location = call.data.replace("loc_", "")
     data = user_data.get(chat_id, {})
     route = data.get("route", "-")
@@ -139,13 +136,18 @@ def finish_booking(call):
     price = data.get("price", 0)
 
     text = (
-    f"Новая заявка:\n"
-    f"Маршрут: {route}\n"
-    f"Взрослых: {adults}, Детей: {children}, Животных: {animals}\n"
-    f"Телефон: {phone}\n"
-    f"Место выезда: {location}\n"
-    f"Итоговая стоимость: {price} руб."
-)
+        f"Новая заявка:
+"
+        f"Маршрут: {route}
+"
+        f"Взрослых: {adults}, Детей: {children}, Животных: {animals}
+"
+        f"Телефон: {phone}
+"
+        f"Место выезда: {location}
+"
+        f"Итоговая стоимость: {price} руб."
+    )
 
     bot.send_message(ADMIN_GROUP_ID, text)
     bot.send_message(chat_id, "Ваша заявка отправлена администраторам. Мы с вами свяжемся.")
