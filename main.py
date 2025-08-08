@@ -148,7 +148,7 @@ def finish_booking(call):
     price = data.get("price", 0)
 
     text = (
-    f"Новая заявка:\n"
+    f"Новая заявка:\nИмя: {user_data[chat_id]['name']}"
     f"Имя: {name}\n"
     f"Маршрут: {route}\n"
     f"Телефон: {phone}\n"
