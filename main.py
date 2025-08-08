@@ -43,13 +43,13 @@ def start_command(message):
 
 @bot.message_handler(func=lambda msg: msg.text == "Расчёт стоимости")
 def handle_calc_button(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     user_data[chat_id] = {}
     msg = bot.send_message(chat_id, "Сколько взрослых пассажиров?")
     bot.register_next_step_handler(msg, get_adults)
 
 def get_adults(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     try:
         user_data[chat_id]['adults'] = int(message.text)
     except:
@@ -58,7 +58,7 @@ def get_adults(message):
     bot.register_next_step_handler(msg, get_children)
 
 def get_children(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     try:
         user_data[chat_id]['children'] = int(message.text)
     except:
@@ -67,7 +67,7 @@ def get_children(message):
     bot.register_next_step_handler(msg, get_animals)
 
 def get_animals(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     try:
         user_data[chat_id]['animals'] = int(message.text)
     except:
