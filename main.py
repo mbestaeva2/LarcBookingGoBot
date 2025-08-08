@@ -42,6 +42,11 @@ def start_command(message):
 def handle_calc_button(message):
     chat_id = message.from_user.id
     user_data[chat_id] = {}
+    msg = bot.send_message(chat_id, "Как вас зовут?")
+    bot.register_next_step_handler(msg, get_name)
+def handle_calc_button(message):
+    chat_id = message.from_user.id
+    user_data[chat_id] = {}
     msg = bot.send_message(chat_id, "Сколько взрослых пассажиров?")
     bot.register_next_step_handler(msg, get_adults)
 
