@@ -135,18 +135,13 @@ def finish_booking(call):
     price = data.get("price", 0)
 
     text = (
-        f"Новая заявка:
-"
-        f"Маршрут: {route}
-"
-        f"Взрослых: {adults}, Детей: {children}, Животных: {animals}
-"
-        f"Телефон: {phone}
-"
-        f"Место выезда: {location}
-"
-        f"Итоговая стоимость: {price} руб."
-    )
+    f"Новая заявка:\n"
+    f"Маршрут: {route}\n"
+    f"Взрослых: {adults}, Детей: {children}, Животных: {animals}\n"
+    f"Телефон: {phone}\n"
+    f"Место выезда: {location}\n"
+    f"Итоговая стоимость: {price} руб."
+)
 
     bot.send_message(ADMIN_GROUP_ID, text)
     bot.send_message(chat_id, "Ваша заявка отправлена администраторам. Мы с вами свяжемся.")
