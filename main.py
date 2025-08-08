@@ -1,5 +1,6 @@
-from telebot import TeleBot, types
+
 import os
+from telebot import TeleBot, types
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = TeleBot(TOKEN)
@@ -30,9 +31,14 @@ def calculate_price(adults, children, animals, route):
     total = adults * price_adult + children * price_child + animals * price_pet
     return total
 
-@bot.message_handler(commands=['start', 'calc'])
+@bot.message_handler(commands=['start'])
+def start_command(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add("💰 Расчёт стоимости")
+    bot.send_message(message.chat.id, "Добро пожаловать! Выберите действие:", reply_markup=markup)
+
 @bot.message_handler(func=lambda msg: msg.text == "💰 Расчёт стоимости")
-def start_calc(message):
+def handle_calc_button(message):
     chat_id = message.chat.id
     user_data[chat_id] = {}
     msg = bot.send_message(chat_id, "Сколько взрослых пассажиров? 👤")
@@ -71,7 +77,7 @@ def get_animals(message):
         "Владикавказ — Батуми"
     ]
     for route in routes:
-    markup.add(types.InlineKeyboardButton(route, callback_data=f"route_{route}"))
+        markup.add(types.InlineKeyboardButton(route, callback_data=f"route_{route}"))
 
     bot.send_message(chat_id, "Выберите маршрут: 📍", reply_markup=markup)
 
