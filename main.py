@@ -11,6 +11,11 @@ ADMIN_GROUP_ID = -4948043121
 
 user_data = {}
 
+def get_name(message):
+    chat_id = message.chat.id
+    user_data[chat_id]["name"] = message.text
+    bot.send_message(chat_id, "Сколько взрослых?")
+
 def calculate_price(adults, children, animals, route):
     if "Батуми" in route:
         price_adult = 6000
@@ -143,7 +148,7 @@ def finish_booking(call):
 
   text = (
     f"Новая заявка:\n"
-    #f"Имя: {user_data[chat_id]['name']}\n"
+    f"Имя: {user_data[chat_id]['name']}\n"
     f"Маршрут: {route}\n"
     f"Телефон: {phone}\n"
     f"Место выезда: {location}\n"
