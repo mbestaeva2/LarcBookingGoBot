@@ -147,13 +147,11 @@ def handle_contact(message):
         return
     user_data.setdefault(chat_id, {})
 
-МВ, [08.08.2025 23:51]
 def get_name(message):
     chat_id = message.chat.id
     user_data[chat_id]["name"] = message.text
     bot.send_message(chat_id, "Сколько взрослых?")
 
-МВ, [09.08.2025 0:07]
 user_data[chat_id]["phone"] = message.contact.phone_number
 
     kb = types.InlineKeyboardMarkup()
