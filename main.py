@@ -23,6 +23,7 @@ if not TOKEN:
 ADMIN_GROUP_ID = -4948043121
 
 bot = TeleBot(TOKEN, parse_mode="HTML")
+bot.remove_webhook()  # важно перед infinity_polling
 
 # Память на сессию пользователя
 user_data = {}  # {chat_id: {"name":..., "adults":..., "children":..., "animals":..., "route":..., "phone":..., "price":...}}
@@ -267,15 +268,15 @@ def finish_booking(call):
     bot.send_message(chat_id, user_text)
 
 # ===== Запуск =====
-if __name__ == "__main__":
-    bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
-    try:
-        bot.remove_webhook()
-    except Exception:
-        pass
+import time
 
-    print("Бот запущен…", datetime.now().isoformat())
-    # Один процесс, один инстанс → 409 не будет
+if __name__ == "__main__":
+    bot.remove_webhook()
+    try:
+        bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
+    except Exception as e:
+        print(f"[polling] failed: {e}")
+        time.sleep(3)
    
 
 
