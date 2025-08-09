@@ -1,5 +1,7 @@
 import os
 from telebot import TeleBot, types
+from datetime import datetime, timezone, timedelta
+import uuid
 
 # === Конфигурация ===
 TOKEN = os.getenv("BOT_TOKEN")
@@ -12,6 +14,31 @@ ADMIN_GROUP_ID = -4948043121  # чат админов
 
 # Память на сессию пользователя
 user_data = {}
+
+def format_money(n: int) -> str:
+    # 23500 -> "23 500 руб."
+    return f"{n:,}".replace(",", " ") + " руб."
+
+def build_breakdown(adults, children, animals, price_adult, price_child, price_pet):
+    lines = []
+    total = adults * price_adult + children * price_child + animals * price_pet
+    if adults:
+        lines.append(f"Взрослые: {adults} × {format_money(price_adult)} = {format_money(adults * price_adult)}")
+    if children:
+        lines.append(f"Дети: {children} × {format_money(price_child)} = {format_money(children * price_child)}")
+    if animals:
+        lines.append(f"Животные: {animals} × {format_money(price_pet)} = {format_money(animals * price_pet)}")
+    lines.append(f"Итоговая стоимость: {format_money(total)}")
+    return "\n".join(lines), total
+
+def get_local_time_str():
+    # Время UTC+3 (Тбилиси/Мск). Если нужен другой пояс — поменяй hours=...
+    now = datetime.now(timezone(timedelta(hours=3)))
+    return now.strftime("%d.%m.%Y %H:%M (UTC+3)")
+
+def make_request_id():
+    # Короткий уникальный ID
+    return uuid.uuid4().hex[:8]
 
 # === Тарифы и расчёт ===
 def get_tariffs(route: str):
@@ -148,65 +175,53 @@ def on_route_selected(call):
     bot.send_message(chat_id, f"Стоимость поездки по маршруту {route}: {price} руб.", reply_markup=kb)
 
 # === Оформление заявки: телефон ===
-@bot.callback_query_handler(func=lambda c: c.data == "confirm_booking")
-def confirm_booking(call):
-    chat_id = call.message.chat.id
-    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    kb.add(types.KeyboardButton("Отправить номер", request_contact=True))
-    bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона для заявки.", reply_markup=kb)
-
-@bot.message_handler(content_types=['contact'])
-def handle_contact(message):
-    chat_id = message.chat.id
-    if not message.contact:
-        return
-    d = ensure_user(chat_id)
-    d["phone"] = message.contact.phone_number
-
-    # выбор места выезда
-    kb = types.InlineKeyboardMarkup()
-    kb.add(
-        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
-        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
-    )
-    kb.add(
-        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
-        types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
-    )
-    kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
-    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
-
-# === Завершение: место выезда и отправка заявки ===
-@bot.callback_query_handler(func=lambda c: c.data.startswith("loc_"))
+@bot.callback_query_handler(func=lambda call: call.data.startswith("loc_"))
 def finish_booking(call):
     chat_id = call.message.chat.id
     location = call.data.replace("loc_", "")
-    d = ensure_user(chat_id)
-    d["location"] = location
 
-    name = d.get("name", "Не указано")
-    route = d.get("route", "-")
-    phone = d.get("phone", "-")
-    adults = int(d.get("adults") or 0)
-    children = int(d.get("children") or 0)
-    animals = int(d.get("animals") or 0)
+    # Достаём всё, что собрали раньше
+    data = user_data.get(chat_id, {})
+    name = data.get("name", "Не указано")
+    route = data.get("route", "-")
+    phone = data.get("phone", "-")
+    adults = int(data.get("adults", 0) or 0)
+    children = int(data.get("children", 0) or 0)
+    animals = int(data.get("animals", 0) or 0)
 
-    breakdown, total = format_price_breakdown(adults, children, animals, route)
+    # Тарифы для выбранного маршрута
+    # Если у тебя уже есть функция get_tariffs(route) — используем её.
+    # ДОЛЖНО возвращать (price_adult, price_child, price_pet).
+    price_adult, price_child, price_pet = get_tariffs(route)
 
-    # Админам
-    text_admin = (
-        "Новая заявка:\n"
+    # Сборка разбора и тотала
+    breakdown_text, total = build_breakdown(adults, children, animals, price_adult, price_child, price_pet)
+
+    # ID и время заявки
+    request_id = make_request_id()
+    ts_str = get_local_time_str()
+
+    # Сообщение админу
+    admin_text = (
+        f"Новая заявка № {request_id}\n"
+        f"Время: {ts_str}\n"
         f"Имя: {name}\n"
         f"Маршрут: {route}\n"
         f"Взрослых: {adults}, Детей: {children}, Животных: {animals}\n"
         f"Телефон: {phone}\n"
         f"Место выезда: {location}\n"
-        f"{breakdown}"
+        f"{breakdown_text}"
     )
-    bot.send_message(ADMIN_GROUP_ID, text_admin)
+    bot.send_message(ADMIN_GROUP_ID, admin_text)
 
-    # Пользователю
-    bot.send_message(chat_id, "Ваша заявка отправлена администраторам. Мы с вами свяжемся.\n\n" + breakdown)
+    # Подтверждение пользователю
+    user_text = (
+        "Ваша заявка отправлена администраторам. Мы с вами свяжемся.\n\n"
+        f"Номер вашей заявки: {request_id}\n"
+        f"Время: {ts_str}\n"
+        f"{breakdown_text}"
+    )
+    bot.send_message(chat_id, user_text)
 
     # очищаем состояние
     user_data.pop(chat_id, None)
