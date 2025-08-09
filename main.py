@@ -220,6 +220,6 @@ if name == "__main__":
 
     print("Бот запущен…", datetime.now().isoformat())
     # Один процесс, один инстанс → 409 не будет
-    bot.
+   
 
 infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
