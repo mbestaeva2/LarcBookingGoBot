@@ -16,13 +16,11 @@ def get_name(message):
     user_data[chat_id]["name"] = message.text
     bot.send_message(chat_id, "Сколько взрослых?")
 
-МВ, [08.08.2025 23:51]
 def get_name(message):
     chat_id = message.chat.id
     user_data[chat_id]["name"] = message.text
     bot.send_message(chat_id, "Сколько взрослых?")
 
-МВ, [09.08.2025 0:07]
 def calculate_price(adults, children, animals, route):
     if "Батуми" in route:
         price_adult = 6000
