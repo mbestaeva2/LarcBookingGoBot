@@ -6,7 +6,15 @@ TOKEN = os.getenv("BOT_TOKEN")
 bot = TeleBot(TOKEN)
 
 ADMIN_GROUP_ID = -4948043121  # твоя админ-группа
+chat_id = call.message.chat.id
+data = user_data.get(chat_id, {})
 
+price = calculate_price(
+    int(data.get("adults", 0)),
+    int(data.get("children", 0)),
+    int(data.get("animals", 0)),
+    route
+)
 # Память по пользователям
 user_data = {}
 
