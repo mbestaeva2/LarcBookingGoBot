@@ -160,7 +160,7 @@ def on_route_selected(call):
 def cb_apply_booking(call):
     chat_id = call.message.chat.id
     user_id = call.from_user.id
-    ask_phone(chat_id=chat_id, user_id=user_id)
+    ask_phone(chat_id, user_id)
 
 
 
@@ -185,22 +185,11 @@ def ask_phone(chat_id: int, user_id: int):
     kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
 
     if is_group(chat_id):
-        safe_send(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку 👇")
-        pm = safe_send(user_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
-        if pm is None:
-            safe_send(chat_id, "Откройте мой профиль и нажмите «Start», затем вернитесь — тогда смогу написать вам в личку.")
-        returndef ask_phone(chat_id: int, user_id: int):
-    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
-
-    if is_group(chat_id):
         safe_send(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку.")
         pm = safe_send(user_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
         if pm is None:
             safe_send(chat_id, "Откройте мой профиль и нажмите «Start», затем вернитесь.")
         return
-
-    safe_send(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
 
     safe_send(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
 
