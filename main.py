@@ -133,27 +133,29 @@ def get_animals(message):
         kb.add(types.InlineKeyboardButton(route, callback_data=f"route:{route}"))
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=kb)
 
-@bot.callback_query_handler(func=lambda c: c.data.startswith("route:"))
+@bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
     chat_id = call.message.chat.id
-    route = call.data.split("route:", 1)[1]
-    ensure_session(chat_id)
-    d = user_data[chat_id]
+    user_id = call.from_user.id
+    route = call.data.split("route_", 1)[1]
 
-    d["route"] = route
-    total, pa, pc, pp = calculate_price(d["adults"] or 0, d["children"] or 0, d["animals"] or 0, route)
-    d["price"] = total
+    # сохраним маршрут в сессию пользователя (если хранишь по chat_id — ок)
+    user_data.setdefault(chat_id, {})
+    user_data[chat_id]["route"] = route
 
-    # кнопка «Оформить заявку»
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="confirm"))
-    bot.edit_message_text(
-        chat_id=chat_id,
-        message_id=call.message.message_id,
-        text=f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>",
-        parse_mode="HTML"
-    )
-    bot.send_message(chat_id, "Нажмите, чтобы оформить заявку:", reply_markup=kb)
+    # возьми из своих полей:
+    adults = int(user_data[chat_id].get("adults", 1))
+    children = int(user_data[chat_id].get("children", 0))
+    animals = int(user_data[chat_id].get("animals", 0))
+
+    total = calculate_price(adults, children, animals, route)
+
+    # показываем цену + кнопку
+    text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
+    safe_send(chat_id, text + "\n\nНажмите, чтобы оформить заявку:", reply_markup=markup, parse_mode="HTML")
+    
 
 @bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
 def cb_apply_booking(call):
@@ -182,20 +184,16 @@ def cb_apply_booking(call):
 
 # 3) Функция запроса телефона — одна! (без ensure_session)
 def ask_phone(chat_id: int, user_id: int):
-    from telebot import types
-    # группа? — переносим в личку
-    if int(chat_id) < 0:
-        safe_send(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку.")
-        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
+
+    if is_group(chat_id):
+        safe_send(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку 👇")
         pm = safe_send(user_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
         if pm is None:
             safe_send(chat_id, "Откройте мой профиль и нажмите «Start», затем вернитесь — тогда смогу написать вам в личку.")
         return
 
-    # личка — сразу просим контакт
-    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
     safe_send(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
 
 # 4) Обработчик контакта
@@ -204,8 +202,7 @@ def handle_contact(message):
     chat_id = message.chat.id
     user_id = message.from_user.id
 
-    # в группе контакты не принимаем
-    if int(chat_id) < 0:
+    if is_group(chat_id):
         safe_send(chat_id, "Пожалуйста, отправьте номер телефона мне в личные сообщения.")
         return
 
@@ -228,7 +225,7 @@ def handle_contact(message):
         safe_send(chat_id, "Откуда будет выезд?", reply_markup=markup)
     else:
         safe_send(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
-
+        
 @bot.callback_query_handler(func=lambda c: c.data.startswith("loc:"))
 def finish_booking(call):
     chat_id = call.message.chat.id
