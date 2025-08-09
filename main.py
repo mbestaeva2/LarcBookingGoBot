@@ -211,7 +211,7 @@ def finish_booking(call):
     bot.send_message(chat_id, user_text)
 
 # ===== Запуск =====
-if name == "__main__":
+if __name__ == "__main__":
     # На всякий случай убираем вебхук (если раньше где-то включался)
     try:
         bot.remove_webhook()
