@@ -122,9 +122,7 @@ def get_animals(message):
     for r in [
         "Владикавказ — Тбилиси",
         "Владикавказ — Степанцминда",
-
-МВ, [09.08.2025 3:34]
-"Владикавказ — Кутаиси",
+        "Владикавказ — Кутаиси",
         "Владикавказ — Батуми",
     ]:
         kb.add(types.InlineKeyboardButton(r, callback_data=f"route_{r}"))
