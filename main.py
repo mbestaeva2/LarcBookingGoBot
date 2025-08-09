@@ -222,4 +222,4 @@ if __name__ == "__main__":
     # Один процесс, один инстанс → 409 не будет
    
 
-infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
+infinite_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
