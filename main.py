@@ -1,4 +1,3 @@
-
 import os
 from telebot import TeleBot, types
 
@@ -129,7 +128,8 @@ def on_route_selected(call):
 
     kb = types.InlineKeyboardMarkup()
     kb.add(types.
-           InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
+
+InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
     bot.send_message(chat_id, f"Стоимость поездки по маршруту {route}: {d['price']} руб.", reply_markup=kb)
 
 @bot.callback_query_handler(func=lambda c: c.data == "confirm_booking")
