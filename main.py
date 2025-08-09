@@ -9,6 +9,9 @@ if not TOKEN:
     raise RuntimeError("Переменная окружения BOT_TOKEN не задана")
 
 bot = TeleBot(TOKEN)
+@bot.message_handler(commands=['id'])
+def chat_id_cmd(message):
+    bot.reply_to(message, f"chat_id = {message.chat.id}")
 
 ADMIN_GROUP_ID = -4948043121  # чат админов
 
