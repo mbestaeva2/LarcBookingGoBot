@@ -140,20 +140,24 @@ def confirm_booking(call):
     bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона для заявки.", reply_markup=kb)
 
 
-@bot.message_handler(content_types=['contact'])
-def handle_contact(message):
-    chat_id = message.chat.id
-    if not message.contact:
-        return
-    user_data.setdefault(chat_id, {})
-
+МВ, [08.08.2025 23:51]
 def get_name(message):
     chat_id = message.chat.id
     user_data[chat_id]["name"] = message.text
     bot.send_message(chat_id, "Сколько взрослых?")
 
-user_data[chat_id]["phone"] = message.contact.phone_number
+МВ, [09.08.2025 0:41]
+@bot.message_handler(content_types=['contact'])
+def handle_contact(message):
+    chat_id = message.chat.id
+    if not message.contact:
+        return
 
+    # сохраняем номер
+    user_data.setdefault(chat_id, {})
+    user_data[chat_id]["phone"] = message.contact.phone_number
+
+    # показываем выбор места выезда
     kb = types.InlineKeyboardMarkup()
     kb.add(
         types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
@@ -164,12 +168,14 @@ user_data[chat_id]["phone"] = message.contact.phone_number
         types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
     )
     kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
+
     bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
 
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("loc_"))
 def finish_booking(call):
     chat_id = call.message.chat.id
+
     d = user_data.get(chat_id, {})
     d["location"] = call.data.replace("loc_", "")
     user_data[chat_id] = d
@@ -193,9 +199,7 @@ def finish_booking(call):
         f"Итоговая стоимость: {price} руб."
     )
 
-    # Админам в группу
     bot.send_message(ADMIN_GROUP_ID, text)
-    # Пользователю подтверждение
     bot.send_message(chat_id, "Ваша заявка отправлена администраторам. Мы с вами свяжемся.")
 
 
