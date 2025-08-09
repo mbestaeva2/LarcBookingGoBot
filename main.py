@@ -44,16 +44,10 @@ def handle_calc_button(message):
     user_data[chat_id] = {}
     msg = bot.send_message(chat_id, "Как вас зовут?")
     bot.register_next_step_handler(msg, get_name)
+    
 def handle_calc_button(message):
     chat_id = message.from_user.id
     user_data[chat_id] = {}
-    msg = bot.send_message(chat_id, "Сколько взрослых пассажиров?")
-    bot.register_next_step_handler(msg, get_adults)
-
-def get_name(message):
-    chat_id = message.chat.id
-    user_data[chat_id] = {}
-    user_data[chat_id]["name"] = message.text
     msg = bot.send_message(chat_id, "Сколько взрослых пассажиров?")
     bot.register_next_step_handler(msg, get_adults)
 
@@ -147,9 +141,9 @@ def finish_booking(call):
     animals = data.get("animals", 0)
     price = data.get("price", 0)
 
-    text = (
-    f"Новая заявка:\nИмя: {user_data[chat_id]['name']}"
-    f"Имя: {name}\n"
+  text = (
+    f"Новая заявка:\n"
+    #f"Имя: {user_data[chat_id]['name']}\n"
     f"Маршрут: {route}\n"
     f"Телефон: {phone}\n"
     f"Место выезда: {location}\n"
