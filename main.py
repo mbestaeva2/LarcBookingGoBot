@@ -123,17 +123,20 @@ def get_animals(message):
         return bot.register_next_step_handler(msg, get_animals)
 
     # выбор маршрута
+from telebot import types
+
+ROUTES = [
+    "Владикавказ — Тбилиси",
+    "Владикавказ — Степанцминда",
+    "Владикавказ — Кутаиси",
+    "Владикавказ — Батуми",
+]
+
+def ask_route(chat_id: int):
     kb = types.InlineKeyboardMarkup()
-    for route in [
-        "Владикавказ — Тбилиси",
-        "Владикавказ — Степанцминда",
-        "Владикавказ — Кутаиси",
-        "Владикавказ — Батуми",
-
-]:
-        kb.add(types.InlineKeyboardButton(route, callback_data=f"route:{route}"))
-    bot.send_message(chat_id, "Выберите маршрут:", reply_markup=kb)
-
+    for r in ROUTES:
+        kb.add(types.InlineKeyboardButton(r, callback_data="route_" + r))
+    safe_send(chat_id, "Выберите маршрут:", reply_markup=kb)
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
     chat_id = call.message.chat.id
@@ -147,8 +150,8 @@ def on_route_selected(call):
     animals  = int(user_data[chat_id].get("animals", 0))
 
     total = calculate_price(adults, children, animals, route)
-    show_price(chat_id, route, total)
-
+    show_price(chat_id, route, total)   # <- наша функция, что рисует цену + кнопку "Оформить заявку"
+    
     # показываем цену + кнопку
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
     markup = types.InlineKeyboardMarkup()
