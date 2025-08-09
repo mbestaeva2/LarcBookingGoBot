@@ -136,8 +136,12 @@ def on_route_selected(call):
 
     route = call.data.replace("route_", "")
     d["route"] = route
-    d["price"] = calculate_price(d["adults"], d["children"], d["animals"], route)
-
+    d["price"] = calculate_price(
+    int(d["adults"]),
+    int(d["children"]),
+    int(d["animals"]),
+    route
+)
     kb = types.InlineKeyboardMarkup()
     kb.add(types.
 
