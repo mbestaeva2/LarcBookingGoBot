@@ -1,6 +1,17 @@
 import os
 from telebot import TeleBot, types
 from datetime import datetime
+from telebot.apihelper import ApiTelegramException
+
+def safe_send(chat_id, text, **kwargs):
+    try:
+        return bot.send_message(chat_id, text, **kwargs)
+    except ApiTelegramException as e:
+        print(f"[safe_send] send_message failed: {e}")
+        return None
+
+def is_group(chat_id: int) -> bool:
+    return int(chat_id) < 0
 
 # ===== Конфигурация =====
 TOKEN = os.getenv("BOT_TOKEN")
@@ -144,31 +155,79 @@ def on_route_selected(call):
     )
     bot.send_message(chat_id, "Нажмите, чтобы оформить заявку:", reply_markup=kb)
 
-@bot.callback_query_handler(func=lambda c: c.data == "confirm")
-def ask_phone(call):
+@bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
+def cb_apply_booking(call):
     chat_id = call.message.chat.id
-    ensure_session(chat_id)
+    user_id = call.from_user.id
+    ask_phone(chat_id=chat_id, user_id=user_id)
+
+markup = types.InlineKeyboardMarkup()
+markup.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
+safe_send(chat_id, f"Стоимость поездки по маршруту {route}: {total} руб.\n\nНажмите, чтобы оформить заявку:", reply_markup=markup)
+
+# 1) Показ цены + кнопка "Оформить заявку"
+def show_price(chat_id, route, total):
+    from telebot import types
+    text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
+    safe_send(chat_id, text + "\n\nНажмите, чтобы оформить заявку:", reply_markup=markup, parse_mode="HTML")
+
+# 2) Хендлер кнопки — один!
+@bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
+def cb_apply_booking(call):
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    ask_phone(chat_id=chat_id, user_id=user_id)   # <— используем одну функцию
+
+# 3) Функция запроса телефона — одна! (без ensure_session)
+def ask_phone(chat_id: int, user_id: int):
+    from telebot import types
+    # группа? — переносим в личку
+    if int(chat_id) < 0:
+        safe_send(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку.")
+        kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
+        pm = safe_send(user_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
+        if pm is None:
+            safe_send(chat_id, "Откройте мой профиль и нажмите «Start», затем вернитесь — тогда смогу написать вам в личку.")
+        return
+
+    # личка — сразу просим контакт
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    kb.add(types.KeyboardButton("Отправить номер", request_contact=True))
-    bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона для заявки.", reply_markup=kb)
+    kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
+    safe_send(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
 
+# 4) Обработчик контакта
 @bot.message_handler(content_types=['contact'])
-def got_contact(message):
+def handle_contact(message):
     chat_id = message.chat.id
-    ensure_session(chat_id)
-    if message.contact and message.contact.phone_number:
-        user_data[chat_id]["phone"] = message.contact.phone_number
+    user_id = message.from_user.id
 
-    # место выезда
-    kb = types.InlineKeyboardMarkup(row_width=2)
-    kb.add(
-        types.InlineKeyboardButton("Аэропорт", callback_data="loc:airport"),
-        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc:station"),
-        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc:address"),
-        types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc:didube"),
-        types.InlineKeyboardButton("Другое", callback_data="loc:other"),
-    )
-    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
+    # в группе контакты не принимаем
+    if int(chat_id) < 0:
+        safe_send(chat_id, "Пожалуйста, отправьте номер телефона мне в личные сообщения.")
+        return
+
+    if message.contact and message.contact.phone_number:
+        phone = message.contact.phone_number
+        user_data.setdefault(user_id, {})
+        user_data[user_id]["phone"] = phone
+
+        hide = types.ReplyKeyboardRemove()
+        safe_send(chat_id, "Спасибо! Номер получен. Укажите локацию выезда:", reply_markup=hide)
+
+        markup = types.InlineKeyboardMarkup()
+        markup.add(
+            types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+            types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+            types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+            types.InlineKeyboardButton("Метро Дидубе", callback_data="loc_didube"),
+            types.InlineKeyboardButton("Другое", callback_data="loc_other"),
+        )
+        safe_send(chat_id, "Откуда будет выезд?", reply_markup=markup)
+    else:
+        safe_send(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("loc:"))
 def finish_booking(call):
