@@ -9,10 +9,25 @@ if not TOKEN:
     raise RuntimeError("Переменная окружения BOT_TOKEN не задана")
 
 bot = TeleBot(TOKEN)
+# --- Команда /id: показывает chat_id и user_id (работает в личке и группах) ---
 @bot.message_handler(commands=['id'])
 def chat_id_cmd(message):
-    bot.reply_to(message, f"chat_id = {message.chat.id}")
+    chat = message.chat
+    user = message.from_user
 
+    # Базовая инфа
+    lines = [
+        f"Тип чата: {chat.type}",          # private / group / supergroup / channel
+        f"Chat ID: {chat.id}",
+        f"User ID: {user.id}",
+    ]
+
+    # Доп. данные для групп
+    if chat.type in ('group', 'supergroup'):
+        lines.append(f"Название чата: {chat.title}")
+
+    bot.reply_to(message, "\n".join(lines))
+    
 ADMIN_GROUP_ID = -4948043121  # чат админов
 
 # Память на сессию пользователя
