@@ -10,18 +10,21 @@ ADMIN_GROUP_ID = -4948043121  # твоя админ-группа
 # Память по пользователям
 user_data = {}
 
-# === Прайс ===
 def calculate_price(adults, children, animals, route):
+    # Задаём цены для разных маршрутов
     if "Батуми" in route:
         price_adult, price_child, price_pet = 6000, 4000, 1000
     elif "Кутаиси" in route:
         price_adult, price_child, price_pet = 5000, 3500, 800
     elif "Степанцминда" in route:
         price_adult, price_child, price_pet = 2000, 1500, 500
-    else:  # Тбилиси и все прочее
+    else:  # Владикавказ — Тбилиси и всё остальное
         price_adult, price_child, price_pet = 3000, 2000, 500
-    return adults * price_adult + children * price_child + animals * price_pet
 
+    # Расчёт
+    total = adults * price_adult + children * price_child + animals * price_pet
+    return total
+    
 # === Хелперы ===
 def ensure_user(chat_id):
     # Создаем каркас, если его ещё нет
