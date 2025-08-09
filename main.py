@@ -2,17 +2,18 @@ import os
 from telebot import TeleBot, types
 from datetime import datetime
 from telebot.apihelper import ApiTelegramException
+from telebot import types
 
 def safe_send(chat_id, text, **kwargs):
     try:
         return bot.send_message(chat_id, text, **kwargs)
     except ApiTelegramException as e:
-        print(f"[safe_send] send_message failed: {e}")
+        print(f"[safe_send] {e}")
         return None
 
 def is_group(chat_id: int) -> bool:
     return int(chat_id) < 0
-
+    
 # ===== Конфигурация =====
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
@@ -136,19 +137,17 @@ def get_animals(message):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
     chat_id = call.message.chat.id
-    user_id = call.from_user.id
     route = call.data.split("route_", 1)[1]
 
-    # сохраним маршрут в сессию пользователя (если хранишь по chat_id — ок)
     user_data.setdefault(chat_id, {})
     user_data[chat_id]["route"] = route
 
-    # возьми из своих полей:
-    adults = int(user_data[chat_id].get("adults", 1))
+    adults   = int(user_data[chat_id].get("adults", 1))
     children = int(user_data[chat_id].get("children", 0))
-    animals = int(user_data[chat_id].get("animals", 0))
+    animals  = int(user_data[chat_id].get("animals", 0))
 
     total = calculate_price(adults, children, animals, route)
+    show_price(chat_id, route, total)
 
     # показываем цену + кнопку
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
@@ -163,17 +162,15 @@ def cb_apply_booking(call):
     user_id = call.from_user.id
     ask_phone(chat_id=chat_id, user_id=user_id)
 
-markup = types.InlineKeyboardMarkup()
-markup.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
-safe_send(chat_id, f"Стоимость поездки по маршруту {route}: {total} руб.\n\nНажмите, чтобы оформить заявку:", reply_markup=markup)
+
 
 # 1) Показ цены + кнопка "Оформить заявку"
 def show_price(chat_id, route, total):
-    from telebot import types
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
-    safe_send(chat_id, text + "\n\nНажмите, чтобы оформить заявку:", reply_markup=markup, parse_mode="HTML")
+    safe_send(chat_id, text + "\n\nНажмите, чтобы оформить заявку:",
+              reply_markup=markup, parse_mode="HTML")
 
 # 2) Хендлер кнопки — один!
 @bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
@@ -192,7 +189,18 @@ def ask_phone(chat_id: int, user_id: int):
         pm = safe_send(user_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
         if pm is None:
             safe_send(chat_id, "Откройте мой профиль и нажмите «Start», затем вернитесь — тогда смогу написать вам в личку.")
+        returndef ask_phone(chat_id: int, user_id: int):
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
+
+    if is_group(chat_id):
+        safe_send(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку.")
+        pm = safe_send(user_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
+        if pm is None:
+            safe_send(chat_id, "Откройте мой профиль и нажмите «Start», затем вернитесь.")
         return
+
+    safe_send(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
 
     safe_send(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
 
