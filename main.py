@@ -87,30 +87,31 @@ def get_name_step(message):
     ask_int(chat_id, "Сколько взрослых пассажиров?", get_adults)
 
 def get_adults(message):
-    chat_id = message.chat.id
-    val = parse_int_or_repeat(message, get_adults)
-    if val is None:
-        return
-    d = ensure_user(chat_id)
-    d["adults"] = val
-    ask_int(chat_id, "Сколько детей?", get_children)
+    chat_id = message.from_user.id
+    try:
+        user_data.setdefault(chat_id, {})["adults"] = int(message.text)
+    except:
+        return bot.send_message(chat_id, "Пожалуйста, введите число.")
+    msg = bot.send_message(chat_id, "Сколько детей?")
+    bot.register_next_step_handler(msg, get_children)
 
 def get_children(message):
-    chat_id = message.chat.id
-    val = parse_int_or_repeat(message, get_children)
-    if val is None:
-        return
-    d = ensure_user(chat_id)
-    d["children"] = val
-    ask_int(chat_id, "Сколько животных?", get_animals)
+    chat_id = message.from_user.id
+    try:
+        user_data[chat_id]["children"] = int(message.text)
+    except:
+        return bot.send_message(chat_id, "Пожалуйста, введите число.")
+    msg = bot.send_message(chat_id, "Сколько животных?")
+    bot.register_next_step_handler(msg, get_animals)
 
 def get_animals(message):
-    chat_id = message.chat.id
-    val = parse_int_or_repeat(message, get_animals)
-    if val is None:
-        return
-    d = ensure_user(chat_id)
-    d["animals"] = val
+    chat_id = message.from_user.id
+    try:
+        user_data[chat_id]["animals"] = int(message.text)
+    except:
+        return bot.send_message(chat_id, "Пожалуйста, введите число.")
+
+    # … дальше показ выбора маршрута
 
     kb = types.InlineKeyboardMarkup()
     routes = [
@@ -126,27 +127,22 @@ def get_animals(message):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
     chat_id = call.message.chat.id
-    d = ensure_user(chat_id)
-
-    # если вдруг пользователь перескочил шаги
-    for key in ("adults", "children", "animals"):
-        if d.get(key) is None:
-            bot.answer_callback_query(call.id, "Пожалуйста, сначала ответьте на все вопросы.")
-            return
-
     route = call.data.replace("route_", "")
-    d["route"] = route
-    d["price"] = calculate_price(
-    int(d["adults"]),
-    int(d["children"]),
-    int(d["animals"]),
-    route
-)
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.
 
-InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
-    bot.send_message(chat_id, f"Стоимость поездки по маршруту {route}: {d['price']} руб.", reply_markup=kb)
+    d = user_data.setdefault(chat_id, {})
+
+    # Безопасно приводим к int (если нет значения — берём 0)
+    adults  = int(d.get("adults")  or 0)
+    children = int(d.get("children") or 0)
+    animals = int(d.get("animals") or 0)
+
+    price = calculate_price(adults, children, animals, route)
+    d.update({"route": route, "price": price})
+
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
+
+    bot.send_message(chat_id, f"Стоимость поездки по маршруту {route}: {price} руб.", reply_markup=kb)
 
 @bot.callback_query_handler(func=lambda c: c.data == "confirm_booking")
 def confirm_booking(call):
