@@ -222,5 +222,4 @@ if name == "__main__":
     # Один процесс, один инстанс → 409 не будет
     bot.
 
-МВ, [09.08.2025 5:40]
 infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
