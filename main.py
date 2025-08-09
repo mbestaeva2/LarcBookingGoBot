@@ -10,20 +10,29 @@ ADMIN_GROUP_ID = -4948043121  # твоя админ-группа
 # Память по пользователям
 user_data = {}
 
-def calculate_price(adults, children, animals, route):
-    # Задаём цены для разных маршрутов
+# ===== Тарифы и расчет =====
+def get_tariffs(route: str):
     if "Батуми" in route:
-        price_adult, price_child, price_pet = 6000, 4000, 1000
+        return 6000, 4000, 1000   # adult, child, pet
     elif "Кутаиси" in route:
-        price_adult, price_child, price_pet = 5000, 3500, 800
+        return 5000, 3500, 800
     elif "Степанцминда" in route:
-        price_adult, price_child, price_pet = 2000, 1500, 500
+        return 2000, 1500, 500
     else:  # Владикавказ — Тбилиси и всё остальное
-        price_adult, price_child, price_pet = 3000, 2000, 500
+        return 3000, 2000, 500
 
-    # Расчёт
-    total = adults * price_adult + children * price_child + animals * price_pet
-    return total
+def format_price_breakdown(adults: int, children: int, animals: int, route: str):
+    pa, pc, pp = get_tariffs(route)
+    lines = []
+    if adults:
+        lines.append(f"Взрослые: {adults} × {pa} = {adults * pa} руб.")
+    if children:
+        lines.append(f"Дети: {children} × {pc} = {children * pc} руб.")
+    if animals:
+        lines.append(f"Животные: {animals} × {pp} = {animals * pp} руб.")
+    total = adults * pa + children * pc + animals * pp
+    lines.append(f"Итоговая стоимость: {total} руб.")
+    return "\n".join(lines), total
     
 # === Хелперы ===
 def ensure_user(chat_id):
@@ -168,34 +177,41 @@ def handle_contact(message):
     kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
     bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
 
-@bot.callback_query_handler(func=lambda c: c.data.startswith("loc_"))
+# ===== Завершение оформления заявки (выбор локации) =====
+@bot.callback_query_handler(func=lambda call: call.data.startswith("loc_"))
 def finish_booking(call):
     chat_id = call.message.chat.id
-    d = ensure_user(chat_id)
-    d["location"] = call.data.replace("loc_", "")
+    location = call.data.replace("loc_", "")
 
-    # Контроль: все обязательные поля должны быть заполнены
-    missing = [k for k in ("name", "adults", "children", "animals", "route", "price", "phone", "location") if d.get(k) in (None, "")]
-    if missing:
-        bot.send_message(chat_id, "Не все данные заполнены. Пожалуйста, начните заново командой «Расчёт стоимости».")
-        return
+    data = user_data.get(chat_id, {})
+    name = data.get("name", "Не указано")
+    phone = data.get("phone", "-")
+    route = data.get("route", "-")
+    adults = int(data.get("adults") or 0)
+    children = int(data.get("children") or 0)
+    animals = int(data.get("animals") or 0)
 
-    # Формируем текст заявки — всегда полный
-    text = (
-        f"Новая заявка:\n"
-        f"Имя: {d['name']}\n"
-        f"Маршрут: {d['route']}\n"
-        f"Взрослых: {d['adults']}, Детей: {d['children']}, Животных: {d['animals']}\n"
-        f"Телефон: +{d['phone'] if not d['phone'].startswith('+') else d['phone']}\n"
-        f"Место выезда: {d['location']}\n"
-        f"Итоговая стоимость: {d['price']} руб."
+    breakdown, total = format_price_breakdown(adults, children, animals, route)
+
+    # Сообщение администраторам
+    text_admin = (
+        "Новая заявка:\n"
+        f"Имя: {name}\n"
+        f"Маршрут: {route}\n"
+        f"Взрослых: {adults}, Детей: {children}, Животных: {animals}\n"
+        f"Телефон: {phone}\n"
+        f"Место выезда: {location}\n"
+        f"{breakdown}"
+    )
+    bot.send_message(ADMIN_GROUP_ID, text_admin)
+
+    # Подтверждение пользователю
+    bot.send_message(
+        chat_id,
+        "Ваша заявка отправлена администраторам. Мы с вами свяжемся.\n\n" + breakdown
     )
 
-    # Админам
-    bot.send_message(ADMIN_GROUP_ID, text)
-    # Пользователю
-    bot.send_message(chat_id, "Ваша заявка отправлена администраторам. Мы с вами свяжемся.")
-
+  
     # Очистим состояние, чтобы следующий расчёт начинать с нуля
     user_data[chat_id] = {}
 
