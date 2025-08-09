@@ -211,8 +211,8 @@ def finish_booking(call):
     bot.send_message(chat_id, user_text)
 
 # ===== Запуск =====
-if __name__ == "__main__":
-    # На всякий случай убираем вебхук (если раньше где-то включался)
+if name == "__main__":
+    bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
     try:
         bot.remove_webhook()
     except Exception:
@@ -222,4 +222,4 @@ if __name__ == "__main__":
     # Один процесс, один инстанс → 409 не будет
    
 
-infinite_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
+
