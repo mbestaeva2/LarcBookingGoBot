@@ -2,104 +2,104 @@
 import os
 from telebot import TeleBot, types
 
+# === Конфиг ===
 TOKEN = os.getenv("BOT_TOKEN")
-print("TOKEN:", TOKEN)
 bot = TeleBot(TOKEN)
 
-ADMIN_ID = 561665893
-ADMIN_GROUP_ID = -4948043121
+ADMIN_GROUP_ID = -4948043121  # твоя админ-группа
 
+# Память по пользователям
 user_data = {}
 
-def get_name(message):
-    chat_id = message.chat.id
-    user_data[chat_id]["name"] = message.text
-    bot.send_message(chat_id, "Сколько взрослых?")
-
-def get_name(message):
-    chat_id = message.chat.id
-    user_data[chat_id]["name"] = message.text
-    bot.send_message(chat_id, "Сколько взрослых?")
-
+# === Прайс ===
 def calculate_price(adults, children, animals, route):
     if "Батуми" in route:
-        price_adult = 6000
-        price_child = 4000
-        price_pet = 1000
+        price_adult, price_child, price_pet = 6000, 4000, 1000
     elif "Кутаиси" in route:
-        price_adult = 5000
-        price_child = 3500
-        price_pet = 800
+        price_adult, price_child, price_pet = 5000, 3500, 800
     elif "Степанцминда" in route:
-        price_adult = 2000
-        price_child = 1500
-        price_pet = 500
-    else:  # Тбилиси и прочие
-        price_adult = 3000
-        price_child = 2000
-        price_pet = 500
+        price_adult, price_child, price_pet = 2000, 1500, 500
+    else:  # Тбилиси и все прочее
+        price_adult, price_child, price_pet = 3000, 2000, 500
     return adults * price_adult + children * price_child + animals * price_pet
 
+# === Хелперы ===
+def ensure_user(chat_id):
+    # Создаем каркас, если его ещё нет
+    user_data.setdefault(chat_id, {
+        "name": None,
+        "adults": None,
+        "children": None,
+        "animals": None,
+        "route": None,
+        "price": None,
+        "phone": None,
+        "location": None
+    })
+    return user_data[chat_id]
 
+def ask_int(chat_id, text, next_handler):
+    msg = bot.send_message(chat_id, text)
+    bot.register_next_step_handler(msg, next_handler)
+
+def parse_int_or_repeat(message, repeat_handler):
+    chat_id = message.chat.id
+    try:
+        return int(message.text.strip())
+    except Exception:
+        msg = bot.send_message(chat_id, "Пожалуйста, введите число.")
+        bot.register_next_step_handler(msg, repeat_handler)
+        return None
+
+# === Старт/меню ===
 @bot.message_handler(commands=['start'])
 def start_command(message):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("Расчёт стоимости")
     bot.send_message(message.chat.id, "Добро пожаловать! Выберите действие:", reply_markup=kb)
 
-
 @bot.message_handler(func=lambda m: m.text == "Расчёт стоимости")
 def handle_calc_button(message):
     chat_id = message.chat.id
-    user_data[chat_id] = {}
+    d = ensure_user(chat_id)
+    # начинаем заново каждый раз
+    for k in d.keys():
+        d[k] = None
     msg = bot.send_message(chat_id, "Как вас зовут?")
     bot.register_next_step_handler(msg, get_name_step)
 
-
+# === Шаги опроса ===
 def get_name_step(message):
     chat_id = message.chat.id
-    user_data.setdefault(chat_id, {})
-    user_data[chat_id]["name"] = message.text.strip()
-    msg = bot.send_message(chat_id, "Сколько взрослых пассажиров?")
-    bot.register_next_step_handler(msg, get_adults)
-
-
-def _parse_int_or_ask_again(message, prompt):
-    chat_id = message.chat.id
-    try:
-        return int(message.text.strip())
-    except Exception:
-        msg = bot.send_message(chat_id, "Пожалуйста, введите число.")
-        bot.register_next_step_handler(msg, prompt)
-        return None
-
+    d = ensure_user(chat_id)
+    d["name"] = message.text.strip() if message.text else "Не указано"
+    ask_int(chat_id, "Сколько взрослых пассажиров?", get_adults)
 
 def get_adults(message):
     chat_id = message.chat.id
-    val = _parse_int_or_ask_again(message, get_adults)
+    val = parse_int_or_repeat(message, get_adults)
     if val is None:
         return
-    user_data[chat_id]["adults"] = val
-    msg = bot.send_message(chat_id, "Сколько детей?")
-    bot.register_next_step_handler(msg, get_children)
-
+    d = ensure_user(chat_id)
+    d["adults"] = val
+    ask_int(chat_id, "Сколько детей?", get_children)
 
 def get_children(message):
     chat_id = message.chat.id
-    val = _parse_int_or_ask_again(message, get_children)
+    val = parse_int_or_repeat(message, get_children)
     if val is None:
         return
-    user_data[chat_id]["children"] = val
-    msg = bot.send_message(chat_id, "Сколько животных?")
-    bot.register_next_step_handler(msg, get_animals)
-
+    d = ensure_user(chat_id)
+    d["children"] = val
+    ask_int(chat_id, "Сколько животных?", get_animals)
 
 def get_animals(message):
     chat_id = message.chat.id
-    val = _parse_int_or_ask_again(message, get_animals)
+    val = parse_int_or_repeat(message, get_animals)
     if val is None:
         return
-    user_data[chat_id]["animals"] = val
+    d = ensure_user(chat_id)
+    d["animals"] = val
 
     kb = types.InlineKeyboardMarkup()
     routes = [
@@ -112,50 +112,47 @@ def get_animals(message):
         kb.add(types.InlineKeyboardButton(r, callback_data=f"route_{r}"))
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=kb)
 
-
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
     chat_id = call.message.chat.id
-    route = call.data.replace("route_", "")
-    d = user_data.get(chat_id, {})
-    adults = d.get("adults", 0)
-    children = d.get("children", 0)
-    animals = d.get("animals", 0)
+    d = ensure_user(chat_id)
 
-    price = calculate_price(adults, children, animals, route)
+    # если вдруг пользователь перескочил шаги
+    for key in ("adults", "children", "animals"):
+        if d.get(key) is None:
+            bot.answer_callback_query(call.id, "Пожалуйста, сначала ответьте на все вопросы.")
+            return
+
+    route = call.data.replace("route_", "")
     d["route"] = route
-    d["price"] = price
-    user_data[chat_id] = d
+    d["price"] = calculate_price(d["adults"], d["children"], d["animals"], route)
 
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
-    bot.send_message(chat_id, f"Стоимость поездки по маршруту {route}: {price} руб.", reply_markup=kb)
-
+    kb.add(types.
+           InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
+    bot.send_message(chat_id, f"Стоимость поездки по маршруту {route}: {d['price']} руб.", reply_markup=kb)
 
 @bot.callback_query_handler(func=lambda c: c.data == "confirm_booking")
 def confirm_booking(call):
     chat_id = call.message.chat.id
+    d = ensure_user(chat_id)
+
+    if not d.get("route") or d.get("price") is None:
+        bot.answer_callback_query(call.id, "Сначала выберите маршрут.")
+        return
+
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(types.KeyboardButton("Отправить номер", request_contact=True))
     bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона для заявки.", reply_markup=kb)
-
-
-def get_name(message):
-    chat_id = message.chat.id
-    user_data[chat_id]["name"] = message.text
-    bot.send_message(chat_id, "Сколько взрослых?")
 
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     chat_id = message.chat.id
     if not message.contact:
         return
+    d = ensure_user(chat_id)
+    d["phone"] = message.contact.phone_number
 
-    # сохраняем номер
-    user_data.setdefault(chat_id, {})
-    user_data[chat_id]["phone"] = message.contact.phone_number
-
-    # показываем выбор места выезда
     kb = types.InlineKeyboardMarkup()
     kb.add(
         types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
@@ -166,40 +163,38 @@ def handle_contact(message):
         types.InlineKeyboardButton("Станция метро Дидубе", callback_data="loc_didube"),
     )
     kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
-
     bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
-
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("loc_"))
 def finish_booking(call):
     chat_id = call.message.chat.id
-
-    d = user_data.get(chat_id, {})
+    d = ensure_user(chat_id)
     d["location"] = call.data.replace("loc_", "")
-    user_data[chat_id] = d
 
-    name = d.get("name", "Не указано")
-    route = d.get("route", "-")
-    phone = d.get("phone", "-")
-    adults = d.get("adults", 0)
-    children = d.get("children", 0)
-    animals = d.get("animals", 0)
-    price = d.get("price", 0)
-    location = d.get("location", "-")
+    # Контроль: все обязательные поля должны быть заполнены
+    missing = [k for k in ("name", "adults", "children", "animals", "route", "price", "phone", "location") if d.get(k) in (None, "")]
+    if missing:
+        bot.send_message(chat_id, "Не все данные заполнены. Пожалуйста, начните заново командой «Расчёт стоимости».")
+        return
 
+    # Формируем текст заявки — всегда полный
     text = (
         f"Новая заявка:\n"
-        f"Имя: {name}\n"
-        f"Маршрут: {route}\n"
-        f"Взрослых: {adults}, Детей: {children}, Животных: {animals}\n"
-        f"Телефон: {phone}\n"
-        f"Место выезда: {location}\n"
-        f"Итоговая стоимость: {price} руб."
+        f"Имя: {d['name']}\n"
+        f"Маршрут: {d['route']}\n"
+        f"Взрослых: {d['adults']}, Детей: {d['children']}, Животных: {d['animals']}\n"
+        f"Телефон: +{d['phone'] if not d['phone'].startswith('+') else d['phone']}\n"
+        f"Место выезда: {d['location']}\n"
+        f"Итоговая стоимость: {d['price']} руб."
     )
 
+    # Админам
     bot.send_message(ADMIN_GROUP_ID, text)
+    # Пользователю
     bot.send_message(chat_id, "Ваша заявка отправлена администраторам. Мы с вами свяжемся.")
 
+    # Очистим состояние, чтобы следующий расчёт начинать с нуля
+    user_data[chat_id] = {}
 
-print("Бот запущен…")
+print("Бот запущен...")
 bot.polling(none_stop=True)
