@@ -140,13 +140,11 @@ def confirm_booking(call):
     bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона для заявки.", reply_markup=kb)
 
 
-МВ, [08.08.2025 23:51]
 def get_name(message):
     chat_id = message.chat.id
     user_data[chat_id]["name"] = message.text
     bot.send_message(chat_id, "Сколько взрослых?")
 
-МВ, [09.08.2025 0:41]
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     chat_id = message.chat.id
