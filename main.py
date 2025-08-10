@@ -206,20 +206,20 @@ def handle_contact(message):
     bot.send_message(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
 
         # Показать inline-кнопки локаций
-        kb = types.InlineKeyboardMarkup()
-        kb.add(
-            types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
-            types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
-        )
-        kb.add(
-            types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
-            types.InlineKeyboardButton("Метро Дидубе", callback_data="loc_didube"),
-        )
-        kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
-        safe_send(chat_id, "Откуда будет выезд?", reply_markup=kb)
-    else:
-        safe_send(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
-        
+def ask_location(chat_id: int):
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
+        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+    )
+    kb.add(
+        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+        types.InlineKeyboardButton("Метро Дидубе", callback_data="loc_didube"),
+    )
+    kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
+    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
+     
+   
 # ===== ЛОКАЦИЯ (inline) + формирование заявки =====
 def ask_location(chat_id: int):
     kb = types.InlineKeyboardMarkup()
