@@ -157,27 +157,22 @@ def show_price(chat_id: int, route: str, total: int):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
     bot.answer_callback_query(call.id)
-    uid = call.from_user.id
-    chat_id = call.message.chat.id
+    uid, chat_id = call.from_user.id, call.message.chat.id
 
-    # сохраняем маршрут
-    route_map = {
-        "route_Владикавказ — Тбилиси": "Владикавказ — Тбилиси",
-        "route_Владикавказ — Степанцминда": "Владикавказ — Степанцминда",
-        "route_Владикавказ — Кутаиси": "Владикавказ — Кутаиси",
-        "route_Владикавказ — Батуми": "Владикавказ — Батуми"
-    }
-    route = route_map.get(call.data, "Владикавказ — Тбилиси")
-    session(uid)["route"] = route
+    # "route_Владикавказ — Тбилиси" -> "Владикавказ — Тбилиси"
+    route = call.data[len("route_"):]
+    s = session(uid)
+    s["route"] = route
 
-    # достаём количество пассажиров
-    adults = int(session(uid).get("adults", 0))
-    children = int(session(uid).get("children", 0))
-    animals = int(session(uid).get("animals", 0))
+    adults   = int(s.get("adults", 0))
+    children = int(s.get("children", 0))
+    animals  = int(s.get("animals", 0))
 
-    # считаем стоимость
+    # ВАЖНО: распаковать кортеж
     total, pa, pc, pp = calculate_price(adults, children, animals, route)
-    session(uid)["total"] = total
+    s["total"] = total
+
+    show_price(chat_id, route, total)
 
     # показываем цену
     price_text = (
