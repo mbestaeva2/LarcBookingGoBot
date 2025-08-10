@@ -157,30 +157,36 @@ def show_price(chat_id: int, route: str, total: int):
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
     bot.answer_callback_query(call.id)
-    uid, chat_id = call.from_user.id, call.message.chat.id
-    route = call.data.split("route_", 1)[1]
+    uid = call.from_user.id
+    chat_id = call.message.chat.id
 
-    s = session(uid)
-    s["route"] = route
+    # сохраняем маршрут
+    route_map = {
+        "route_Владикавказ — Тбилиси": "Владикавказ — Тбилиси",
+        "route_Владикавказ — Степанцминда": "Владикавказ — Степанцминда",
+        "route_Владикавказ — Кутаиси": "Владикавказ — Кутаиси",
+        "route_Владикавказ — Батуми": "Владикавказ — Батуми"
+    }
+    route = route_map.get(call.data, "Владикавказ — Тбилиси")
+    session(uid)["route"] = route
 
-    adults   = int(s.get("adults", 1))
-    children = int(s.get("children", 0))
-    animals  = int(s.get("animals", 0))
+    # достаём количество пассажиров
+    adults = int(session(uid).get("adults", 0))
+    children = int(session(uid).get("children", 0))
+    animals = int(session(uid).get("animals", 0))
 
-    # ВАЖНО: распаковываем кортеж из calculate_price!
-   total, pa, pc, pp = calculate_price(adults, children, animals, route)
-session(uid)["total"] = total
-show_price(chat_id, route, total)
+    # считаем стоимость
+    total, pa, pc, pp = calculate_price(adults, children, animals, route)
+    session(uid)["total"] = total
 
-    # Показ цены + кнопка "Оформить заявку"
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
-    bot.send_message(
-        chat_id,
-        f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>\n\nНажмите, чтобы оформить заявку:",
-        parse_mode="HTML",
-        reply_markup=kb
+    # показываем цену
+    price_text = (
+        f"Стоимость поездки по маршруту {route}: {total} руб.\n\n"
+        "Нажмите, чтобы оформить заявку:"
     )
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
+    bot.send_message(chat_id, price_text, reply_markup=kb)
 # 1) Показ цены + кнопка "Оформить заявку"
 def show_price(chat_id, route, total):
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
