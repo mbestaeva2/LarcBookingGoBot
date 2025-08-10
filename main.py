@@ -145,28 +145,28 @@ def ask_route(chat_id: int):
     for r in ROUTES:
         kb.add(types.InlineKeyboardButton(r, callback_data="route_" + r))
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=kb)
+    
+import time
+
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
+    bot.answer_callback_query(call.id)  # сказать Telegram "принял"
     chat_id = call.message.chat.id
     route = call.data.split("route_", 1)[1]
 
-    user_data.setdefault(chat_id, {})
-    user_data[chat_id]["route"] = route
+    ud = user_data.setdefault(chat_id, {})
+    # антидубль: если тот же колбэк пришёл подряд за 2 сек — игнорим
+    if ud.get("last_cb") == call.data and time.time() - ud.get("last_cb_at", 0) < 2:
+        return
+    ud["last_cb"] = call.data
+    ud["last_cb_at"] = time.time()
 
-    adults   = int(user_data[chat_id].get("adults", 1))
-    children = int(user_data[chat_id].get("children", 0))
-    animals  = int(user_data[chat_id].get("animals", 0))
+    adults   = int(ud.get("adults", 1))
+    children = int(ud.get("children", 0))
+    animals  = int(ud.get("animals", 0))
 
     total = calculate_price(adults, children, animals, route)
     show_price(chat_id, route, total)  # рисует цену + "Оформить заявку"
-    
-    # показываем цену + кнопку
-    text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
-    safe_send(chat_id, text + "\n\nНажмите, чтобы оформить заявку:", reply_markup=markup, parse_mode="HTML")
-    
-
 # 1) Показ цены + кнопка "Оформить заявку"
 def show_price(chat_id, route, total):
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
@@ -178,10 +178,11 @@ def show_price(chat_id, route, total):
 # 2) Хендлер кнопки — один!
 @bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
 def cb_apply_booking(call):
+    bot.answer_callback_query(call.id)  # антидубль
     chat_id = call.message.chat.id
     user_id = call.from_user.id
-    ask_phone(chat_id=chat_id, user_id=user_id)   # <— используем одну функцию
-
+    ask_phone(chat_id, user_id)
+    
 # 3) Функция запроса телефона — одна! (без ensure_session)
 def ask_phone(chat_id: int, user_id: int):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
