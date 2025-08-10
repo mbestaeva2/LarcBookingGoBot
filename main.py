@@ -1,4 +1,5 @@
 import os
+import requests
 from telebot import TeleBot, types
 from datetime import datetime
 from telebot.apihelper import ApiTelegramException
