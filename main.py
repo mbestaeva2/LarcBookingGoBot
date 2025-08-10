@@ -154,16 +154,27 @@ def on_route_selected(call):
     bot.answer_callback_query(call.id)
     uid, chat_id = call.from_user.id, call.message.chat.id
     route = call.data.split("route_", 1)[1]
-    s = sess(uid)
+
+    s = session(uid)
     s["route"] = route
 
     adults   = int(s.get("adults", 1))
     children = int(s.get("children", 0))
     animals  = int(s.get("animals", 0))
-    total = calculate_price(adults, children, animals, route)
+
+    # ВАЖНО: распаковываем кортеж из calculate_price!
+    total, pa, pc, pp = calculate_price(adults, children, animals, route)
     s["total"] = total
 
-    show_price(chat_id, route, total)
+    # Показ цены + кнопка "Оформить заявку"
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
+    bot.send_message(
+        chat_id,
+        f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>\n\nНажмите, чтобы оформить заявку:",
+        parse_mode="HTML",
+        reply_markup=kb
+    )
 # 1) Показ цены + кнопка "Оформить заявку"
 def show_price(chat_id, route, total):
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
@@ -205,22 +216,11 @@ def handle_contact(message):
         return ask_location(chat_id)
     bot.send_message(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
 
-        # Показать inline-кнопки локаций
-def ask_location(chat_id: int):
-    kb = types.InlineKeyboardMarkup()
-    kb.add(
-        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
-        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
-    )
-    kb.add(
-        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
-        types.InlineKeyboardButton("Метро Дидубе", callback_data="loc_didube"),
-    )
-    kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
-    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
+
      
    
 # ===== ЛОКАЦИЯ (inline) + формирование заявки =====
+# ===== ЛОКАЦИЯ (inline) =====
 def ask_location(chat_id: int):
     kb = types.InlineKeyboardMarkup()
     kb.add(
@@ -246,7 +246,7 @@ def on_location_selected(call):
         "loc_didube": "Метро Дидубе",
         "loc_other": "Другое",
     }
-    s = sess(uid)
+    s = session(uid)  # <-- было sess, должно быть session
     s["location"] = loc_map.get(call.data, "Другое")
 
     # --- собираем и отправляем заявку ---
@@ -256,7 +256,11 @@ def on_location_selected(call):
     adults   = int(s.get('adults', 0))
     children = int(s.get('children', 0))
     animals  = int(s.get('animals', 0))
-    total    = s.get('total') or calculate_price(adults, children, animals, route)
+
+    if s.get('total') is not None:
+        total = int(s['total'])
+    else:
+        total, _, _, _ = calculate_price(adults, children, animals, route)  # распаковали кортеж
 
     admin_text = (
         "🆕 Новая заявка:\n"
@@ -268,13 +272,12 @@ def on_location_selected(call):
         f"Итоговая стоимость: {total} руб."
     )
     bot.send_message(ADMIN_GROUP_ID, admin_text, disable_web_page_preview=True)
-
     bot.send_message(chat_id, "Заявка отправлена администраторам. Мы свяжемся с вами в ближайшее время.")
-
+# ===== Запуск =====
 # ===== Запуск =====
 import time
 
-if __name__ == "__main__":
+if name == "__main__":  # <-- исправили name -> name
     bot.remove_webhook()
     while True:
         try:
@@ -288,6 +291,4 @@ if __name__ == "__main__":
             print(f"[polling] API error: {e} — повтор через 5с"); time.sleep(5)
         except Exception as e:
             print(f"[polling] Unhandled: {e} — повтор через 10с"); time.sleep(10)
-   
-
 
