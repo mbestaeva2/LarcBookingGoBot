@@ -78,11 +78,16 @@ def chat_id_cmd(message):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    uid = message.from_user.id
-    session(uid).clear()  # начинаем новую заявку
-    # ...показываешь главное меню
+    uid, chat_id = message.from_user.id, message.chat.id
+    session(uid).clear()  # новая заявка
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add(types.KeyboardButton("Расчёт стоимости"))
+    bot.send_message(chat_id, "Добро пожаловать! Выберите действие:", reply_markup=kb)
 
-def ask_name(chat_id):
+@bot.message_handler(func=lambda m: m.text == "Расчёт стоимости")
+def start_flow(message):
+    uid, chat_id = message.from_user.id, message.chat.id
+    session(uid).clear()
     msg = bot.send_message(chat_id, "Как вас зовут?")
     bot.register_next_step_handler(msg, get_name)
 
@@ -291,4 +296,8 @@ if __name__ == "__main__":  # <-- исправили name -> name
             print(f"[polling] API error: {e} — повтор через 5с"); time.sleep(5)
         except Exception as e:
             print(f"[polling] Unhandled: {e} — повтор через 10с"); time.sleep(10)
+
+@bot.message_handler(commands=['ping'])
+def _ping(m):
+    bot.reply_to(m, "pong")
 
