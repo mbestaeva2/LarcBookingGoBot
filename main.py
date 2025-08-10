@@ -32,7 +32,8 @@ bot.remove_webhook()  # важно перед infinity_polling
 
 # Память на сессию пользователя
 user_data = {}  # {chat_id: {"name":..., "adults":..., "children":..., "animals":..., "route":..., "phone":..., "price":...}}
-
+def session(uid: int) -> dict:
+    return user_data.setdefault(uid, {})
 # ===== Утилиты =====
 def get_tariffs(route: str):
     """Цены за одного: (adult, child, pet)"""
@@ -76,63 +77,55 @@ def chat_id_cmd(message):
     bot.reply_to(message, "\n".join(lines))
 
 @bot.message_handler(commands=['start'])
-def start_command(message):
-    chat_id = message.chat.id
-    ensure_session(chat_id)
-    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    kb.add(types.KeyboardButton("Расчёт стоимости"))
-    bot.send_message(chat_id, "Добро пожаловать! Выберите действие:", reply_markup=kb)
+def start(message):
+    uid = message.from_user.id
+    session(uid).clear()  # начинаем новую заявку
+    # ...показываешь главное меню
 
-@bot.message_handler(func=lambda m: m.text == "Расчёт стоимости")
-def start_flow(message):
-    chat_id = message.chat.id
-    ensure_session(chat_id)
+def ask_name(chat_id):
     msg = bot.send_message(chat_id, "Как вас зовут?")
     bot.register_next_step_handler(msg, get_name)
 
 def get_name(message):
-    chat_id = message.chat.id
-    ensure_session(chat_id)
-    user_data[chat_id]["name"] = (message.text or "").strip() or "Не указано"
-    msg = bot.send_message(chat_id, "Сколько взрослых пассажиров? (числом)")
+    uid = message.from_user.id
+    session(uid)['name'] = message.text.strip()
+    msg = bot.send_message(message.chat.id, "Сколько взрослых пассажиров? (числом)")
     bot.register_next_step_handler(msg, get_adults)
 
 def get_adults(message):
-    chat_id = message.chat.id
-    ensure_session(chat_id)
+    uid = message.from_user.id
     try:
-        user_data[chat_id]["adults"] = max(0, int(message.text))
-    except Exception:
-        msg = bot.send_message(chat_id, "Пожалуйста, введите число. Сколько взрослых?")
+        session(uid)['adults'] = max(0, int(message.text))
+    except:
+        msg = bot.send_message(message.chat.id, "Введите число. Сколько взрослых?")
         return bot.register_next_step_handler(msg, get_adults)
-    msg = bot.send_message(chat_id, "Сколько детей? (числом)")
+    msg = bot.send_message(message.chat.id, "Сколько детей? (числом)")
     bot.register_next_step_handler(msg, get_children)
 
 def get_children(message):
-    chat_id = message.chat.id
-    ensure_session(chat_id)
+    uid = message.from_user.id
     try:
-        user_data[chat_id]["children"] = max(0, int(message.text))
-    except Exception:
-        msg = bot.send_message(chat_id, "Пожалуйста, введите число. Сколько детей?")
+        session(uid)['children'] = max(0, int(message.text))
+    except:
+        msg = bot.send_message(message.chat.id, "Введите число. Сколько детей?")
         return bot.register_next_step_handler(msg, get_children)
-    msg = bot.send_message(chat_id, "Сколько животных? (числом)")
+    msg = bot.send_message(message.chat.id, "Сколько животных? (числом)")
     bot.register_next_step_handler(msg, get_animals)
 
 def get_animals(message):
-    chat_id = message.chat.id
-    ensure_session(chat_id)
+    uid = message.from_user.id
     try:
-        user_data[chat_id]["animals"] = max(0, int(message.text))
-    except Exception:
-        msg = bot.send_message(chat_id, "Пожалуйста, введите число. Сколько животных?")
+        session(uid)['animals'] = max(0, int(message.text))
+    except:
+        msg = bot.send_message(message.chat.id, "Введите число. Сколько животных?")
         return bot.register_next_step_handler(msg, get_animals)
-
-    return ask_route(chat_id)
+    # показываем выбор маршрута (inline)
+    ask_route(message.chat.id)
 
     # выбор маршрута
 from telebot import types
 
+# ===== МАРШРУТ -> ЦЕНА -> "Оформить заявку" =====
 ROUTES = [
     "Владикавказ — Тбилиси",
     "Владикавказ — Степанцминда",
@@ -145,28 +138,32 @@ def ask_route(chat_id: int):
     for r in ROUTES:
         kb.add(types.InlineKeyboardButton(r, callback_data="route_" + r))
     bot.send_message(chat_id, "Выберите маршрут:", reply_markup=kb)
-    
-import time
+
+def show_price(chat_id: int, route: str, total: int):
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
+    bot.send_message(
+        chat_id,
+        f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>\n\nНажмите, чтобы оформить заявку:",
+        parse_mode="HTML",
+        reply_markup=kb
+    )
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("route_"))
 def on_route_selected(call):
-    bot.answer_callback_query(call.id)  # сказать Telegram "принял"
-    chat_id = call.message.chat.id
+    bot.answer_callback_query(call.id)
+    uid, chat_id = call.from_user.id, call.message.chat.id
     route = call.data.split("route_", 1)[1]
+    s = sess(uid)
+    s["route"] = route
 
-    ud = user_data.setdefault(chat_id, {})
-    # антидубль: если тот же колбэк пришёл подряд за 2 сек — игнорим
-    if ud.get("last_cb") == call.data and time.time() - ud.get("last_cb_at", 0) < 2:
-        return
-    ud["last_cb"] = call.data
-    ud["last_cb_at"] = time.time()
-
-    adults   = int(ud.get("adults", 1))
-    children = int(ud.get("children", 0))
-    animals  = int(ud.get("animals", 0))
-
+    adults   = int(s.get("adults", 1))
+    children = int(s.get("children", 0))
+    animals  = int(s.get("animals", 0))
     total = calculate_price(adults, children, animals, route)
-    show_price(chat_id, route, total)  # рисует цену + "Оформить заявку"
+    s["total"] = total
+
+    show_price(chat_id, route, total)
 # 1) Показ цены + кнопка "Оформить заявку"
 def show_price(chat_id, route, total):
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
@@ -176,45 +173,37 @@ def show_price(chat_id, route, total):
               reply_markup=markup, parse_mode="HTML")
 
 # 2) Хендлер кнопки — один!
+# ===== ОФОРМЛЕНИЕ ЗАЯВКИ: телефон -> локация =====
 @bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
 def cb_apply_booking(call):
-    bot.answer_callback_query(call.id)  # антидубль
-    chat_id = call.message.chat.id
-    user_id = call.from_user.id
-    ask_phone(chat_id, user_id)
-    
-# 3) Функция запроса телефона — одна! (без ensure_session)
-def ask_phone(chat_id: int, user_id: int):
+    bot.answer_callback_query(call.id)
+    uid, chat_id = call.from_user.id, call.message.chat.id
+    if not sess(uid).get("phone"):
+        return ask_phone(chat_id, uid)
+    ask_location(chat_id)
+
+def ask_phone(chat_id: int, uid: int):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
 
-    if is_group(chat_id):
-        safe_send(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку.")
-        pm = safe_send(user_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
-        if pm is None:
-            safe_send(chat_id, "Откройте мой профиль и нажмите «Start», затем вернитесь.")
+    if int(chat_id) < 0:  # группа -> зовём в личку
+        bot.send_message(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку.")
+        bot.send_message(uid, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
         return
 
-    safe_send(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
+    bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
 
-# 4) Обработчик контакта
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
-    chat_id = message.chat.id
-    user_id = message.from_user.id
-
-    if is_group(chat_id):
-        safe_send(chat_id, "Пожалуйста, отправьте номер телефона мне в личные сообщения.")
-        return
-
+    uid, chat_id = message.from_user.id, message.chat.id
+    if int(chat_id) < 0:
+        return bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона мне в личные сообщения.")
     if message.contact and message.contact.phone_number:
-        phone = message.contact.phone_number
-        user_data.setdefault(user_id, {})
-        user_data[user_id]["phone"] = phone
-
-        # убрать клавиатуру контакта
-        hide = types.ReplyKeyboardRemove()
-        safe_send(chat_id, "Спасибо! Номер получен. Укажите локацию выезда:", reply_markup=hide)
+        sess(uid)["phone"] = message.contact.phone_number
+        bot.send_message(chat_id, "Спасибо! Номер получен. Укажите локацию выезда:",
+                         reply_markup=types.ReplyKeyboardRemove())
+        return ask_location(chat_id)
+    bot.send_message(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
 
         # Показать inline-кнопки локаций
         kb = types.InlineKeyboardMarkup()
@@ -231,11 +220,24 @@ def handle_contact(message):
     else:
         safe_send(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
         
+# ===== ЛОКАЦИЯ (inline) + формирование заявки =====
+def ask_location(chat_id: int):
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
+        types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
+        types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+    )
+    kb.add(
+        types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
+        types.InlineKeyboardButton("Метро Дидубе", callback_data="loc_didube"),
+    )
+    kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
+    bot.send_message(chat_id, "Откуда будет выезд?", reply_markup=kb)
+
 @bot.callback_query_handler(func=lambda c: c.data.startswith("loc_"))
 def on_location_selected(call):
     bot.answer_callback_query(call.id)
-    chat_id = call.message.chat.id
-    user_id = call.from_user.id
+    uid, chat_id = call.from_user.id, call.message.chat.id
 
     loc_map = {
         "loc_airport": "Аэропорт",
@@ -244,33 +246,30 @@ def on_location_selected(call):
         "loc_didube": "Метро Дидубе",
         "loc_other": "Другое",
     }
-    location = loc_map.get(call.data, "Другое")
+    s = sess(uid)
+    s["location"] = loc_map.get(call.data, "Другое")
 
-    # сохраняем локацию
-    ud = user_data.setdefault(user_id, {})
-    ud["location"] = location
-
-    # собери данные и отправь в админ-чат
-    adults   = int(ud.get("adults", ud.get(chat_id, {}).get("adults", 1)))
-    children = int(ud.get("children", ud.get(chat_id, {}).get("children", 0)))
-    animals  = int(ud.get("animals", ud.get(chat_id, {}).get("animals", 0)))
-    route    = ud.get("route", ud.get(chat_id, {}).get("route", ""))
-    phone    = ud.get("phone", "")
-
-    total = calculate_price(adults, children, animals, route)
+    # --- собираем и отправляем заявку ---
+    name     = s.get('name', '—')
+    phone    = s.get('phone', '—')
+    route    = s.get('route', '—')
+    adults   = int(s.get('adults', 0))
+    children = int(s.get('children', 0))
+    animals  = int(s.get('animals', 0))
+    total    = s.get('total') or calculate_price(adults, children, animals, route)
 
     admin_text = (
         "🆕 Новая заявка:\n"
+        f"Имя: {name}\n"
         f"Маршрут: {route}\n"
         f"Телефон: {phone}\n"
-        f"Место выезда: {location}\n"
+        f"Место выезда: {s['location']}\n"
         f"Взрослые: {adults}\nДети: {children}\nЖивотные: {animals}\n"
         f"Итоговая стоимость: {total} руб."
     )
-    safe_send(ADMIN_GROUP_ID, admin_text, disable_web_page_preview=True)
+    bot.send_message(ADMIN_GROUP_ID, admin_text, disable_web_page_preview=True)
 
-    # подтверждение пользователю
-    safe_send(chat_id, "Заявка отправлена админам. Мы свяжемся с вами в ближайшее время.")
+    bot.send_message(chat_id, "Заявка отправлена администраторам. Мы свяжемся с вами в ближайшее время.")
 
 # ===== Запуск =====
 import time
