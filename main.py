@@ -277,7 +277,7 @@ def on_location_selected(call):
 # ===== Запуск =====
 import time
 
-if name == "__main__":  # <-- исправили name -> name
+if __name__ == "__main__":  # <-- исправили name -> name
     bot.remove_webhook()
     while True:
         try:
