@@ -158,21 +158,25 @@ def show_price(chat_id: int, route: str, total: int):
 def on_route_selected(call):
     bot.answer_callback_query(call.id)
     uid, chat_id = call.from_user.id, call.message.chat.id
-
-    # "route_Владикавказ — Тбилиси" -> "Владикавказ — Тбилиси"
-    route = call.data[len("route_"):]
     s = session(uid)
+
+    # антидубль: тот же колбэк в течение 2с — игнор
+    import time
+    if s.get("last_cb") == call.data and time.time() - s.get("last_cb_at", 0) < 2:
+        return
+    s["last_cb"], s["last_cb_at"] = call.data, time.time()
+
+    route = call.data[len("route_"):]
     s["route"] = route
 
     adults   = int(s.get("adults", 0))
     children = int(s.get("children", 0))
     animals  = int(s.get("animals", 0))
 
-    # ВАЖНО: распаковать кортеж
     total, pa, pc, pp = calculate_price(adults, children, animals, route)
     s["total"] = total
 
-    show_price(chat_id, route, total)
+    show_price(chat_id, route, total)  # <-- только здесь! нигде больше цену не шлём
 
     # показываем цену
     price_text = (
@@ -182,25 +186,26 @@ def on_route_selected(call):
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
     bot.send_message(chat_id, price_text, reply_markup=kb)
+    
 # 1) Показ цены + кнопка "Оформить заявку"
-def show_price(chat_id, route, total):
-    text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
-    safe_send(chat_id, text + "\n\nНажмите, чтобы оформить заявку:",
-              reply_markup=markup, parse_mode="HTML")
-
+def show_price(chat_id: int, route: str, total: int):
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
+    bot.send_message(
+        chat_id,
+        f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>\n\nНажмите, чтобы оформить заявку:",
+        parse_mode="HTML",
+        reply_markup=kb
+    )
 # 2) Хендлер кнопки — один!
 # ===== ОФОРМЛЕНИЕ ЗАЯВКИ: телефон -> локация =====
 @bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
 def cb_apply_booking(call):
     bot.answer_callback_query(call.id)
     uid, chat_id = call.from_user.id, call.message.chat.id
-
-    # если телефона ещё нет — просим
     if not session(uid).get("phone"):
         return ask_phone(chat_id, uid)
-
+    return ask_location(chat_id)
     # если телефон уже есть — сразу спросим локацию
     return ask_location(chat_id)
 def ask_phone(chat_id: int, uid: int):
