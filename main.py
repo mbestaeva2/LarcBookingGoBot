@@ -146,7 +146,7 @@ def ask_route(chat_id: int):
 
 def show_price(chat_id: int, route: str, total: int):
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
+    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))  # <— ВАЖНО: то же самое в хендлере
     bot.send_message(
         chat_id,
         f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>\n\nНажмите, чтобы оформить заявку:",
@@ -168,8 +168,9 @@ def on_route_selected(call):
     animals  = int(s.get("animals", 0))
 
     # ВАЖНО: распаковываем кортеж из calculate_price!
-    total, pa, pc, pp = calculate_price(adults, children, animals, route)
-    s["total"] = total
+   total, pa, pc, pp = calculate_price(adults, children, animals, route)
+session(uid)["total"] = total
+show_price(chat_id, route, total)
 
     # Показ цены + кнопка "Оформить заявку"
     kb = types.InlineKeyboardMarkup()
@@ -194,33 +195,36 @@ def show_price(chat_id, route, total):
 def cb_apply_booking(call):
     bot.answer_callback_query(call.id)
     uid, chat_id = call.from_user.id, call.message.chat.id
-    if not sess(uid).get("phone"):
-        return ask_phone(chat_id, uid)
-    ask_location(chat_id)
 
+    # если телефона ещё нет — просим
+    if not session(uid).get("phone"):
+        return ask_phone(chat_id, uid)
+
+    # если телефон уже есть — сразу спросим локацию
+    return ask_location(chat_id)
 def ask_phone(chat_id: int, uid: int):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
 
-    if int(chat_id) < 0:  # группа -> зовём в личку
+    if int(chat_id) < 0:  # группа
         bot.send_message(chat_id, "Чтобы оформить заявку, продолжим в личных сообщениях. Я написал(а) вам в личку.")
-        bot.send_message(uid, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
+        bot.send_message(uid, "Пожалуйста, отправьте номер телефона кнопкой ниже.", reply_markup=kb)
         return
 
-    bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона для заявки кнопкой ниже.", reply_markup=kb)
-
+    bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона кнопкой ниже.", reply_markup=kb)
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     uid, chat_id = message.from_user.id, message.chat.id
     if int(chat_id) < 0:
         return bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона мне в личные сообщения.")
+
     if message.contact and message.contact.phone_number:
-        sess(uid)["phone"] = message.contact.phone_number
+        session(uid)["phone"] = message.contact.phone_number
         bot.send_message(chat_id, "Спасибо! Номер получен. Укажите локацию выезда:",
                          reply_markup=types.ReplyKeyboardRemove())
         return ask_location(chat_id)
-    bot.send_message(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
 
+    bot.send_message(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
 
      
    
@@ -251,10 +255,9 @@ def on_location_selected(call):
         "loc_didube": "Метро Дидубе",
         "loc_other": "Другое",
     }
-    s = session(uid)  # <-- было sess, должно быть session
+    s = session(uid)
     s["location"] = loc_map.get(call.data, "Другое")
 
-    # --- собираем и отправляем заявку ---
     name     = s.get('name', '—')
     phone    = s.get('phone', '—')
     route    = s.get('route', '—')
@@ -262,10 +265,10 @@ def on_location_selected(call):
     children = int(s.get('children', 0))
     animals  = int(s.get('animals', 0))
 
-    if s.get('total') is not None:
-        total = int(s['total'])
-    else:
-        total, _, _, _ = calculate_price(adults, children, animals, route)  # распаковали кортеж
+    # total уже считали после выбора маршрута
+    total = s.get('total')
+    if total is None:
+        total, _, _, _ = calculate_price(adults, children, animals, route)
 
     admin_text = (
         "🆕 Новая заявка:\n"
@@ -278,7 +281,6 @@ def on_location_selected(call):
     )
     bot.send_message(ADMIN_GROUP_ID, admin_text, disable_web_page_preview=True)
     bot.send_message(chat_id, "Заявка отправлена администраторам. Мы свяжемся с вами в ближайшее время.")
-# ===== Запуск =====
 # ===== Запуск =====
 import time
 
