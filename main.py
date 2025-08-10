@@ -167,14 +167,6 @@ def on_route_selected(call):
     safe_send(chat_id, text + "\n\nНажмите, чтобы оформить заявку:", reply_markup=markup, parse_mode="HTML")
     
 
-@bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
-def cb_apply_booking(call):
-    chat_id = call.message.chat.id
-    user_id = call.from_user.id
-    ask_phone(chat_id, user_id)
-
-
-
 # 1) Показ цены + кнопка "Оформить заявку"
 def show_price(chat_id, route, total):
     text = f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>"
