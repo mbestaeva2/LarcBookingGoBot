@@ -274,7 +274,7 @@ def finish_booking(call):
 # ===== Запуск =====
 import time
 
-if name == "__main__":
+if __name__ == "__main__":
     bot.remove_webhook()
     while True:
         try:
