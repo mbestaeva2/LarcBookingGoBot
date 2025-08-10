@@ -3,6 +3,10 @@ from telebot import TeleBot, types
 from datetime import datetime
 from telebot.apihelper import ApiTelegramException
 from telebot import types
+from telebot import apihelper
+apihelper.READ_TIMEOUT = 60
+apihelper.CONNECT_TIMEOUT = 15
+apihelper.SESSION_TIME_TO_LIVE = 300
 
 def safe_send(chat_id, text, **kwargs):
     try:
@@ -22,7 +26,7 @@ if not TOKEN:
 # chat_id вашей админ-группы (оставь как у тебя)
 ADMIN_GROUP_ID = -4948043121
 
-bot = TeleBot(TOKEN, parse_mode="HTML", request_timeout=60)
+bot = TeleBot(TOKEN, parse_mode="HTML")
 bot.remove_webhook()  # важно перед infinity_polling
 
 # Память на сессию пользователя
