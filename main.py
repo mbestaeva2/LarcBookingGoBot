@@ -212,18 +212,22 @@ def handle_contact(message):
         user_data.setdefault(user_id, {})
         user_data[user_id]["phone"] = phone
 
+        # убрать клавиатуру контакта
         hide = types.ReplyKeyboardRemove()
         safe_send(chat_id, "Спасибо! Номер получен. Укажите локацию выезда:", reply_markup=hide)
 
-        markup = types.InlineKeyboardMarkup()
-        markup.add(
+        # Показать inline-кнопки локаций
+        kb = types.InlineKeyboardMarkup()
+        kb.add(
             types.InlineKeyboardButton("Аэропорт", callback_data="loc_airport"),
             types.InlineKeyboardButton("Ж/д вокзал", callback_data="loc_station"),
+        )
+        kb.add(
             types.InlineKeyboardButton("С адреса во Владикавказе", callback_data="loc_address"),
             types.InlineKeyboardButton("Метро Дидубе", callback_data="loc_didube"),
-            types.InlineKeyboardButton("Другое", callback_data="loc_other"),
         )
-        safe_send(chat_id, "Откуда будет выезд?", reply_markup=markup)
+        kb.add(types.InlineKeyboardButton("Другое", callback_data="loc_other"))
+        safe_send(chat_id, "Откуда будет выезд?", reply_markup=kb)
     else:
         safe_send(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
         
