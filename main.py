@@ -231,45 +231,46 @@ def handle_contact(message):
     else:
         safe_send(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
         
-@bot.callback_query_handler(func=lambda c: c.data.startswith("loc:"))
-def finish_booking(call):
+@bot.callback_query_handler(func=lambda c: c.data.startswith("loc_"))
+def on_location_selected(call):
+    bot.answer_callback_query(call.id)
     chat_id = call.message.chat.id
-    ensure_session(chat_id)
-    d = user_data[chat_id]
-    location = call.data.split("loc:", 1)[1]
+    user_id = call.from_user.id
 
-    # Безопасные значения по умолчанию
-    name = d.get("name") or "Не указано"
-    route = d.get("route") or "-"
-    adults = d.get("adults") or 0
-    children = d.get("children") or 0
-    animals = d.get("animals") or 0
-    phone = d.get("phone") or "-"
-    total, pa, pc, pp = calculate_price(adults, children, animals, route)
+    loc_map = {
+        "loc_airport": "Аэропорт",
+        "loc_station": "Ж/д вокзал",
+        "loc_address": "С адреса во Владикавказе",
+        "loc_didube": "Метро Дидубе",
+        "loc_other": "Другое",
+    }
+    location = loc_map.get(call.data, "Другое")
 
-    # Сообщение админу (в группу)
+    # сохраняем локацию
+    ud = user_data.setdefault(user_id, {})
+    ud["location"] = location
+
+    # собери данные и отправь в админ-чат
+    adults   = int(ud.get("adults", ud.get(chat_id, {}).get("adults", 1)))
+    children = int(ud.get("children", ud.get(chat_id, {}).get("children", 0)))
+    animals  = int(ud.get("animals", ud.get(chat_id, {}).get("animals", 0)))
+    route    = ud.get("route", ud.get(chat_id, {}).get("route", ""))
+    phone    = ud.get("phone", "")
+
+    total = calculate_price(adults, children, animals, route)
+
     admin_text = (
-        "🧾 <b>Новая заявка</b>:\n"
-        f"Имя: {name}\n"
+        "🆕 Новая заявка:\n"
         f"Маршрут: {route}\n"
-        f"Телефон: <a href='tel:{phone}'>{phone}</a>\n"
+        f"Телефон: {phone}\n"
         f"Место выезда: {location}\n"
-        f"Взрослые: {adults} × {pa} = {adults * pa} руб.\n"
-        f"Дети: {children} × {pc} = {children * pc} руб.\n"
-        f"Животные: {animals} × {pp} = {animals * pp} руб.\n"
-        f"<b>Итоговая стоимость: {total} руб.</b>"
+        f"Взрослые: {adults}\nДети: {children}\nЖивотные: {animals}\n"
+        f"Итоговая стоимость: {total} руб."
     )
-    bot.send_message(ADMIN_GROUP_ID, admin_text, disable_web_page_preview=True)
+    safe_send(ADMIN_GROUP_ID, admin_text, disable_web_page_preview=True)
 
-    # Подтверждение пользователю (с тем же разбором)
-    user_text = (
-        "✅ Ваша заявка отправлена администраторам. Мы с вами свяжемся.\n\n"
-        f"Взрослые: {adults} × {pa} = {adults * pa} руб.\n"
-        f"Дети: {children} × {pc} = {children * pc} руб.\n"
-        f"Животные: {animals} × {pp} = {animals * pp} руб.\n"
-        f"<b>Итоговая стоимость: {total} руб.</b>"
-    )
-    bot.send_message(chat_id, user_text)
+    # подтверждение пользователю
+    safe_send(chat_id, "Заявка отправлена админам. Мы свяжемся с вами в ближайшее время.")
 
 # ===== Запуск =====
 import time
