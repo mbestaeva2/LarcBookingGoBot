@@ -131,6 +131,7 @@ def get_animals(message):
 from telebot import types
 
 # ===== МАРШРУТ -> ЦЕНА -> "Оформить заявку" =====
+# ===== МАРШРУТ -> ЦЕНА -> "Оформить заявку" =====
 ROUTES = [
     "Владикавказ — Тбилиси",
     "Владикавказ — Степанцминда",
@@ -146,7 +147,7 @@ def ask_route(chat_id: int):
 
 def show_price(chat_id: int, route: str, total: int):
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))  # <— ВАЖНО: то же самое в хендлере
+    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
     bot.send_message(
         chat_id,
         f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>\n\nНажмите, чтобы оформить заявку:",
@@ -158,15 +159,8 @@ def show_price(chat_id: int, route: str, total: int):
 def on_route_selected(call):
     bot.answer_callback_query(call.id)
     uid, chat_id = call.from_user.id, call.message.chat.id
-    s = session(uid)
-
-    # антидубль: тот же колбэк в течение 2с — игнор
-    import time
-    if s.get("last_cb") == call.data and time.time() - s.get("last_cb_at", 0) < 2:
-        return
-    s["last_cb"], s["last_cb_at"] = call.data, time.time()
-
     route = call.data[len("route_"):]
+    s = session(uid)
     s["route"] = route
 
     adults   = int(s.get("adults", 0))
@@ -176,38 +170,19 @@ def on_route_selected(call):
     total, pa, pc, pp = calculate_price(adults, children, animals, route)
     s["total"] = total
 
-    show_price(chat_id, route, total)  # <-- только здесь! нигде больше цену не шлём
+    show_price(chat_id, route, total)
 
-    # показываем цену
-    price_text = (
-        f"Стоимость поездки по маршруту {route}: {total} руб.\n\n"
-        "Нажмите, чтобы оформить заявку:"
-    )
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="confirm_booking"))
-    bot.send_message(chat_id, price_text, reply_markup=kb)
-    
-# 1) Показ цены + кнопка "Оформить заявку"
-def show_price(chat_id: int, route: str, total: int):
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оформить заявку", callback_data="apply_booking"))
-    bot.send_message(
-        chat_id,
-        f"Стоимость поездки по маршруту <b>{route}</b>: <b>{total} руб.</b>\n\nНажмите, чтобы оформить заявку:",
-        parse_mode="HTML",
-        reply_markup=kb
-    )
-# 2) Хендлер кнопки — один!
-# ===== ОФОРМЛЕНИЕ ЗАЯВКИ: телефон -> локация =====
 @bot.callback_query_handler(func=lambda c: c.data == "apply_booking")
 def cb_apply_booking(call):
     bot.answer_callback_query(call.id)
     uid, chat_id = call.from_user.id, call.message.chat.id
+
+    # если телефона нет — просим контакт (уводит в личку при необходимости)
     if not session(uid).get("phone"):
         return ask_phone(chat_id, uid)
+    # если телефон уже есть — сразу локация
     return ask_location(chat_id)
-    # если телефон уже есть — сразу спросим локацию
-    return ask_location(chat_id)
+
 def ask_phone(chat_id: int, uid: int):
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add(types.KeyboardButton("Отправить номер телефона", request_contact=True))
@@ -218,23 +193,19 @@ def ask_phone(chat_id: int, uid: int):
         return
 
     bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона кнопкой ниже.", reply_markup=kb)
+
 @bot.message_handler(content_types=['contact'])
 def handle_contact(message):
     uid, chat_id = message.from_user.id, message.chat.id
     if int(chat_id) < 0:
         return bot.send_message(chat_id, "Пожалуйста, отправьте номер телефона мне в личные сообщения.")
-
     if message.contact and message.contact.phone_number:
         session(uid)["phone"] = message.contact.phone_number
         bot.send_message(chat_id, "Спасибо! Номер получен. Укажите локацию выезда:",
                          reply_markup=types.ReplyKeyboardRemove())
         return ask_location(chat_id)
-
     bot.send_message(chat_id, "Не вижу номер. Нажмите кнопку «Отправить номер телефона».")
 
-     
-   
-# ===== ЛОКАЦИЯ (inline) + формирование заявки =====
 # ===== ЛОКАЦИЯ (inline) =====
 def ask_location(chat_id: int):
     kb = types.InlineKeyboardMarkup()
@@ -271,7 +242,6 @@ def on_location_selected(call):
     children = int(s.get('children', 0))
     animals  = int(s.get('animals', 0))
 
-    # total уже считали после выбора маршрута
     total = s.get('total')
     if total is None:
         total, _, _, _ = calculate_price(adults, children, animals, route)
