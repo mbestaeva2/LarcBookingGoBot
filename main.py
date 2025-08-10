@@ -22,7 +22,7 @@ if not TOKEN:
 # chat_id вашей админ-группы (оставь как у тебя)
 ADMIN_GROUP_ID = -4948043121
 
-bot = TeleBot(TOKEN, parse_mode="HTML")
+bot = TeleBot(TOKEN, parse_mode="HTML", request_timeout=60)
 bot.remove_webhook()  # важно перед infinity_polling
 
 # Память на сессию пользователя
@@ -270,13 +270,20 @@ def finish_booking(call):
 # ===== Запуск =====
 import time
 
-if __name__ == "__main__":
+if name == "__main__":
     bot.remove_webhook()
-    try:
-        bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=20)
-    except Exception as e:
-        print(f"[polling] failed: {e}")
-        time.sleep(3)
+    while True:
+        try:
+            print("[polling] bot is running…")
+            bot.infinity_polling(skip_pending=True, timeout=20, long_polling_timeout=50)
+        except requests.exceptions.ReadTimeout:
+            print("[polling] ReadTimeout — пробую снова через 3с"); time.sleep(3)
+        except requests.exceptions.ConnectionError as e:
+            print(f"[polling] ConnectionError: {e} — повтор через 5с"); time.sleep(5)
+        except ApiTelegramException as e:
+            print(f"[polling] API error: {e} — повтор через 5с"); time.sleep(5)
+        except Exception as e:
+            print(f"[polling] Unhandled: {e} — повтор через 10с"); time.sleep(10)
    
 
 
